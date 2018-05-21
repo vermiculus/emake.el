@@ -51,6 +51,10 @@ $(ETARGETS):
 This sets up =install=, =compile=, and =test= as targets to be handled by
 EMake so that it can be invoked as, e.g., =make install=.
 
+In this directory, you'll find =sample.el=, =test-sample.el=, a =Makefile=,
+and a =.travis.yml= that demonstrates how to effectively use
+[[https://github.com/flycheck/emacs-travis][=emacs-travis.mk=]] and EMake to test your packages.
+
 * Extending EMake
 Targets can be created (or overridden) by defining a function called
 =emake-my-TARGET= (where =TARGET= is the name of your custom target)

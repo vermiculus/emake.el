@@ -1,5 +1,6 @@
 language: emacs-lisp
-sudo: false
+sudo: required
+dist: trusty
 cache:
 - directories:
   - "$HOME/emacs"
@@ -18,4 +19,6 @@ before_install:
 install:
 - make install
 script:
-- make test
+- make test                     # test uncompiled
+- make compile                  # test compilation
+- make test                     # test compiled
