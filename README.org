@@ -1,0 +1,3 @@
+#+Title: Emacs-Make
+
+Test Elisp with services like Travis CI without the fuss of Cask.
