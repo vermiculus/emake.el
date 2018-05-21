@@ -2,8 +2,8 @@
 ;;; Based on http://edkolev.github.io/posts/2017-09-10-travis-for-emacs-packages.html
 
 ;; PACKAGE_FILE     := the root file of your package
-;; PACKAGE_LISP     := list of Lisp files separated by spaces
 ;; PACKAGE_TESTS    := the root file to load your tests
+;; PACKAGE_LISP     := list of Lisp files in this package separated by spaces
 ;; PACKAGE_ARCHIVES := list of named ELPA archives separated by spaces; see also
 ;;                     `emake-package-archive-master-alist'
 
