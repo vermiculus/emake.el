@@ -17,6 +17,8 @@ EMake itself is driven by three main environment variables:
 - =PACKAGE_FILE= :: This is the Elisp file that contains the definition
                     of your package (e.g., =Author=, =Package-Version=,
                     =Keywords=, etc.)
+- =PACKAGE_TESTS= :: This is the Elisp file that is loaded before
+     running tests.
 - =PACKAGE_LISP= :: This contains a space-delimited list of files to be
                     considered part of the package.
 - =PACKAGE_ARCHIVES= :: This contains a list of =package.el= archives to
@@ -30,11 +32,14 @@ emacs -batch -l emake.el --eval "(emake (pop argv))" target [args...]
 Of course, seeing as EMake would know nothing of your project if
 invoked like this, you should set the environment before the command:
 #+BEGIN_SRC sh
-PACKAGE_FILE="pkg.el" PACKAGE_LISP="pkg.el" PACKAGE_ARCHIVES="gnu melpa"
+PACKAGE_FILE="pkg.el"
+PACKAGE_LISP="pkg.el"
+PACKAGE_TESTS="pkg-test.el"
+PACKAGE_ARCHIVES="gnu melpa"
 #+END_SRC
 In Make, it's easiest to do the following:
 #+BEGIN_SRC makefile
-EENVS := PACKAGE_FILE="pkg.el" PACKAGE_LISP="pkg.el" PACKAGE_ARCHIVES="gnu melpa"
+EENVS := PACKAGE_FILE="pkg.el" PACKAGE_LISP="pkg.el" PACKAGE_TESTS="pkg-test.el" PACKAGE_ARCHIVES="gnu melpa"
 EMAKE := $(EENVS) emacs -batch -l emake.el --eval "(emake (pop argv))"
 ETARGETS := install compile test
 

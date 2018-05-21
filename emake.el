@@ -3,6 +3,7 @@
 
 ;; PACKAGE_FILE     := the root file of your package
 ;; PACKAGE_LISP     := list of Lisp files separated by spaces
+;; PACKAGE_TESTS    := the root file to load your tests
 ;; PACKAGE_ARCHIVES := list of named ELPA archives separated by spaces; see also
 ;;                     `emake-package-archive-master-alist'
 
@@ -20,6 +21,10 @@
 (defconst emake-package-file
   (getenv "PACKAGE_FILE")
   "The Elisp file with package headers")
+
+(defconst emake-package-tests-file
+  (getenv "PACKAGE_TESTS")
+  "The Elisp file with test definitions")
 
 (defvar emake-package-desc
   (with-temp-buffer
@@ -72,18 +77,13 @@ Keys in `emake-package-archive-master-alist'.")
 
 (defun emake-test ()
   "Run all tests in \"PACKAGE-NAME-test.el\"."
-  (let* ((default-directory emake-project-root)
-         (project-tests-path (expand-file-name "test/" emake-project-root))
-         (project-tests-file (expand-file-name (format "%S-test.el" (package-desc-name emake-package-desc))
-                                               project-tests-path)))
-
+  (let ((default-directory emake-project-root))
     (emake-with-elpa
      ;; add the package being tested to `load-path' so it can be required
      (add-to-list 'load-path emake-project-root)
-     (add-to-list 'load-path project-tests-path)
 
      ;; load the file with tests
-     (load project-tests-file)
+     (load emake-package-tests-file)
 
      ;; run the tests and exit with an appropriate status
      (ert-run-tests-batch-and-exit))))
