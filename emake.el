@@ -61,7 +61,9 @@ Keys in `emake-package-archive-master-alist'.")
 
 (defun emake (target)
   "Run `emake-TARGET' if bound."
-  (let ((fun (intern (format "emake-%s" target))))
+  (let ((fun (intern (format "emake-my-%s" target))))
+    (unless (fboundp fun)
+      (setq fun (intern (format "emake-%s" target))))
     (unless (fboundp fun)
       (error "%S target not found" target))
     (emake-message "Running target %S as %S" target fun)
