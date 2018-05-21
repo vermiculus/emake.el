@@ -13,6 +13,7 @@
 
 (require 'package)
 (require 'subr-x)
+(require 'cl-lib)
 
 (defun emake-message (format &rest args)
   "Print a message to standard out"
@@ -50,6 +51,16 @@ Keys in `emake-package-archive-master-alist'.")
     (gnu . "http://elpa.gnu.org/packages/"))
   "Alist of archive-names to their locations")
 
+(defmacro emake-task (description &rest body)
+  "Run BODY wrapped by DESCRIPTION messages"
+  (declare (indent 1))
+  (let ((Sdescription (cl-gensym)))
+    `(let ((,Sdescription (concat ,description "...")))
+       (prog2
+           (emake-message ,Sdescription)
+           (progn ,@body)
+         (emake-message (concat ,Sdescription "done"))))))
+
 (defmacro emake-with-elpa (&rest body)
   "Run BODY after setting up ELPA context"
   (declare (debug t))
@@ -59,9 +70,8 @@ Keys in `emake-package-archive-master-alist'.")
      (dolist (pair emake-package-archive-master-alist)
        (when (memq (car pair) emake-package-archives)
          (push pair package-archives)))
-     (emake-message "initializing package.el...")
-     (package-initialize)
-     (emake-message "initializing package.el...done")
+     (emake-task "initializing package.el"
+       (package-initialize))
      ,@body))
 
 (defun emake (target)
@@ -93,8 +103,7 @@ Keys in `emake-package-archive-master-alist'.")
 Required packages include those that `emake-package-file' lists as
 dependencies."
   (emake-with-elpa
-   (let ((msg (format "installing in %s..." package-user-dir)))
-     (emake-message msg)
+   (emake-task (format "installing in %s" package-user-dir)
      (package-refresh-contents)
 
      ;; install dependencies
@@ -103,9 +112,7 @@ dependencies."
                         (delq 'emacs)))
        (unless (package-installed-p package)
          (ignore-errors
-           (package-install package))))
-
-     (emake-message (concat msg "done")))))
+           (package-install package)))))))
 
 (defun emake-compile ()
   "Compile all files in PACKAGE_LISP"
@@ -113,6 +120,5 @@ dependencies."
   (emake-with-elpa
    (add-to-list 'load-path emake-project-root)
    (dolist (f (split-string (getenv "PACKAGE_LISP") nil 'omit-nulls))
-     (emake-message "compiling %s..." f)
-     (byte-compile-file f)
-     (emake-message "compiling %s...done" f))))
+     (emake-task (format "compiling %s" f)
+       (byte-compile-file f)))))
