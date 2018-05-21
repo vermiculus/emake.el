@@ -107,7 +107,7 @@ dependencies."
 
      (emake-message (concat msg "done")))))
 
-(defun emake-build ()
+(defun emake-compile ()
   "Compile all files in PACKAGE_LISP"
   (require 'bytecomp)
   (emake-with-elpa
