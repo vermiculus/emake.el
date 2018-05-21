@@ -1,3 +1,52 @@
 #+Title: Emacs-Make
 
-Test Elisp with services like Travis CI without the fuss of Cask.
+Test Elisp with services like Travis CI without the fuss of Cask --
+just you, your project, and (Emacs-)Make.
+
+Things EMake does:
+- parses, installs, and runs tests for your package
+- provides all the power of Elisp to extend its capabilities on-demand
+
+Things EMake will never do (or 'reasons you may still need Cask'):
+- manage your development environment or provide tools to do so
+- provide '[[https://bundler.io][bundler]]-like' =exec= abilities (this includes Cask's =emacs=
+  and =eval= commands)
+
+* Using EMake
+EMake itself is driven by three main environment variables:
+- =PACKAGE_FILE= :: This is the Elisp file that contains the definition
+                    of your package (e.g., =Author=, =Package-Version=,
+                    =Keywords=, etc.)
+- =PACKAGE_LISP= :: This contains a space-delimited list of files to be
+                    considered part of the package.
+- =PACKAGE_ARCHIVES= :: This contains a list of =package.el= archives to
+     use for resolving dependencies.
+
+The entry point to EMake is the function ~emake~ and is intended to be
+invoked as follows:
+#+BEGIN_SRC sh
+emacs -batch -l emake.el --eval "(emake (pop argv))" target [args...]
+#+END_SRC
+Of course, seeing as EMake would know nothing of your project if
+invoked like this, you should set the environment before the command:
+#+BEGIN_SRC sh
+PACKAGE_FILE="pkg.el" PACKAGE_LISP="pkg.el" PACKAGE_ARCHIVES="gnu melpa"
+#+END_SRC
+In Make, it's easiest to do the following:
+#+BEGIN_SRC makefile
+EENVS := PACKAGE_FILE="pkg.el" PACKAGE_LISP="pkg.el" PACKAGE_ARCHIVES="gnu melpa"
+EMAKE := $(EENVS) emacs -batch -l emake.el --eval "(emake (pop argv))"
+ETARGETS := install compile test
+
+.PHONY: $(ETARGETS)
+
+$(ETARGETS):
+	$(EMAKE) $@
+#+END_SRC
+This sets up =install=, =compile=, and =test= as targets to be handled by
+EMake so that it can be invoked as, e.g., =make install=.
+
+* Extending EMake
+Targets can be created (or overridden) by defining a function called
+=emake-my-TARGET= (where =TARGET= is the name of your custom target)
+before calling the ~emake~ function.
