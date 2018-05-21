@@ -112,5 +112,6 @@ dependencies."
   (emake-with-elpa
    (add-to-list 'load-path emake-project-root)
    (dolist (f (split-string (getenv "PACKAGE_LISP") nil 'omit-nulls))
-     (emake-message "Compiling %s" f)
-     (byte-compile-file f))))
+     (emake-message "compiling %s..." f)
+     (byte-compile-file f)
+     (emake-message "compiling %s...done" f))))
