@@ -13,7 +13,7 @@ clean:
 	rm -f *.elc
 	rm -rf .elpa/
 
-setup: emacs emake.el
+setup: emacs-travis.mk emake.el
 	export PATH="$(HOME)/bin:$(PATH)"
 	make -f emacs-travis.mk install_emacs
 
