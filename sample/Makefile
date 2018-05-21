@@ -1,4 +1,4 @@
-EENVS := PACKAGE_FILE="sample.el" PACKAGE_SOURCES="gnu melpa" PACKAGE_LISP="sample.el"
+EENVS := PACKAGE_FILE="sample.el" PACKAGE_ARCHIVES="gnu melpa" PACKAGE_LISP="sample.el"
 EMAKE := $(EENVS) emacs -batch -l emake.el --eval "(emake (pop argv))"
 
 .PHONY: clean setup install compile test
