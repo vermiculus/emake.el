@@ -64,8 +64,7 @@ Keys in `emake-package-archive-master-alist'.")
   (let ((fun (intern (format "emake-%s" target))))
     (unless (fboundp fun)
       (error "%S target not found" target))
-    (emake-message "Running target %S with %S\n" target fun)
-    (emake-message "Project file detected as: %S" emake-package-file)
+    (emake-message "Running target %S as %S" target fun)
     (apply fun (prog1 command-line-args-left
                  (setq command-line-args-left nil)))))
 
