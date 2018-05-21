@@ -50,3 +50,18 @@ EMake so that it can be invoked as, e.g., =make install=.
 Targets can be created (or overridden) by defining a function called
 =emake-my-TARGET= (where =TARGET= is the name of your custom target)
 before calling the ~emake~ function.
+
+For example, if =custom-targets.el= contains a custom target called
+~emake-my-cake~ and you invoke EMake as
+#+BEGIN_SRC sh
+emacs -batch -l emake.el -l custom-targets.el --eval "(emake (pop argv))"
+#+END_SRC
+and run ~make cake~, your function ~emake-my-cake~ will be executed after
+some output boilerplate.
+
+You may find ~emake-with-elpa~, =emake-project-root=, and
+=emake-package-desc= helpful (along with the ~package-desc-~ family of
+cl-struct accessors provided by =package.el=).
+
+If your target is generalized and generally useful, consider
+contributing it to this repository!
