@@ -91,6 +91,7 @@ Keys in `emake-package-archive-master-alist'.")
     (emake-with-elpa
      ;; add the package being tested to `load-path' so it can be required
      (add-to-list 'load-path emake-project-root)
+     (add-to-list 'load-path (file-name-directory emake-package-tests-file))
 
      ;; load the file with tests
      (load emake-package-tests-file)
