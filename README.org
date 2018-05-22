@@ -13,7 +13,7 @@ Things EMake will never do (or 'reasons you may still need Cask'):
   and =eval= commands)
 
 * Using EMake
-EMake itself is driven by three main environment variables:
+EMake itself is driven by a few environment variables:
 - =PACKAGE_FILE= :: This is the Elisp file that contains the definition
                     of your package (e.g., =Author=, =Package-Version=,
                     =Keywords=, etc.)
