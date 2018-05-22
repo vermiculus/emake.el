@@ -1,4 +1,3 @@
-(setq debug-on-error (getenv "EMACS_MAKE_DEBUG_MODE"))
 ;;; emake.el --- simple, transparent functionality for automated Elisp testing  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2018  Sean Allred
@@ -42,6 +41,7 @@
 
 ;;; Code:
 
+(setq debug-on-error (string= "1" (getenv "EMACS_MAKE_DEBUG_MODE")))
 
 (require 'package)
 (require 'subr-x)
