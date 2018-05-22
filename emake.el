@@ -41,14 +41,13 @@
 (defconst emake-package-archives
   (when-let ((deps (getenv "PACKAGE_ARCHIVES")))
     (thread-last (split-string deps nil 'omit-nulls)
-      (mapcar #'downcase)
-      (mapcar #'intern)))
+      (mapcar #'downcase)))
   "List of names of archives in use by the package
 Keys in `emake-package-archive-master-alist'.")
 
 (defconst emake-package-archive-master-alist
-  '((melpa . "http://melpa.org/packages/")
-    (gnu . "http://elpa.gnu.org/packages/"))
+  '(("melpa" . "http://melpa.org/packages/")
+    ("gnu" . "http://elpa.gnu.org/packages/"))
   "Alist of archive-names to their locations")
 
 (defmacro emake-task (description &rest body)
@@ -68,7 +67,7 @@ Keys in `emake-package-archive-master-alist'.")
                                              emake-project-root))
          (package-archives nil))
      (dolist (pair emake-package-archive-master-alist)
-       (when (memq (car pair) emake-package-archives)
+       (when (member (car pair) emake-package-archives)
          (push pair package-archives)))
      (emake-task "initializing package.el"
        (package-initialize))
