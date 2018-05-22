@@ -86,6 +86,14 @@ Keys in `emake-package-archive-master-alist'.")
 Key is the string name of the archive.
 Value is the URL at which the archive is hosted.")
 
+(defconst emake-test-runner-master-alist
+  '(("ert" . (progn (require 'ert) 'ert-run-tests-batch-and-exit)))
+  "Test-runner definition alist.
+Key is the string name of the test-runner.  Value is a form that,
+when evaluated, produces a defined function that will run all
+defined tests and exit Emacs with code 0 if and only if all tests
+pass.")
+
 (defmacro emake-task (description &rest body)
   "Run BODY wrapped by DESCRIPTION messages."
   (declare (indent 1))
@@ -120,19 +128,37 @@ Value is the URL at which the archive is hosted.")
     (apply fun (prog1 command-line-args-left
                  (setq command-line-args-left nil)))))
 
-(defun emake-test ()
-  "Run all tests in \"PACKAGE-NAME-test.el\"."
+(defun emake-test (&optional test-runner)
+  "Run all tests in \"PACKAGE-NAME-test.el\".
+Optional argument TEST-RUNNER is a test-runner name in
+`emake-test-runner-master-alist' or the name of a function that
+runs the tests."
+  (setq test-runner (or test-runner "ert"))
+  (let ((entry (assoc-string test-runner emake-test-runner-master-alist)))
+    (cond
+     (entry
+      (setq test-runner (eval (cdr entry))))
+     ((fboundp (intern test-runner))
+      (setq test-runner (intern test-runner)))
+     (t
+      (error "%S test-runner not defined" test-runner))))
+  (emake-message "Detected test-runner as `%S'" test-runner)
+
+  (unless (fboundp test-runner)
+    (error "Test-runner not defined!"))
+
   (let ((default-directory emake-project-root))
     (emake-with-elpa
-     ;; add the package being tested to `load-path' so it can be required
-     (add-to-list 'load-path emake-project-root)
-     (add-to-list 'load-path (file-name-directory emake-package-tests-file))
+     (emake-task (format "loading test definitions in %s" emake-package-tests-file)
+       ;; add the package being tested to `load-path' so it can be required
+       (add-to-list 'load-path emake-project-root)
+       (add-to-list 'load-path (file-name-directory emake-package-tests-file))
 
-     ;; load the file with tests
-     (load emake-package-tests-file)
+       ;; load the file with tests
+       (load emake-package-tests-file))
 
      ;; run the tests and exit with an appropriate status
-     (ert-run-tests-batch-and-exit))))
+     (funcall test-runner))))
 
 (defun emake-install ()
   "Install dependencies.
