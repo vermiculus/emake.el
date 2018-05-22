@@ -1,0 +1,3 @@
+[submodule "example"]
+	path = sample
+	url = git@github.com:vermiculus/emake.el-example.git
