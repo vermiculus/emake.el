@@ -87,8 +87,10 @@ list of arguments for that format string."
     (mapcar #'downcase (split-string deps nil 'omit-nulls))))
 
 (defconst emake-package-archive-master-alist
-  '(("melpa" . "http://melpa.org/packages/")
-    ("gnu" . "http://elpa.gnu.org/packages/"))
+  '(("gnu"          . "https://elpa.gnu.org/packages/")
+    ("melpa"        . "https://melpa.org/packages/")
+    ("melpa-stable" . "https://stable.melpa.org/packages/")
+    ("org"          . "http://orgmode.org/elpa/"))
   "Archive definition alist.
 Key is the string name of the archive.
 Value is the URL at which the archive is hosted.")
