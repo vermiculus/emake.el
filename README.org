@@ -39,31 +39,6 @@ invoked as follows:
 #+BEGIN_SRC sh
 emacs -batch -l emake.el --eval "(emake (pop argv))" target [args...]
 #+END_SRC
-Of course, seeing as EMake would know nothing of your project if
-invoked like this, you should set the environment before the command:
-#+BEGIN_SRC sh
-PACKAGE_FILE="pkg.el"
-PACKAGE_LISP="pkg.el"
-PACKAGE_TESTS="pkg-test.el"
-PACKAGE_ARCHIVES="gnu melpa"
-#+END_SRC
-In Make, it's easiest to do the following:
-#+BEGIN_SRC makefile
-EENVS := PACKAGE_FILE="pkg.el" PACKAGE_LISP="pkg.el" PACKAGE_TESTS="pkg-test.el" PACKAGE_ARCHIVES="gnu melpa"
-EMAKE := $(EENVS) emacs -batch -l emake.el --eval "(emake (pop argv))"
-ETARGETS := install compile test
-
-.PHONY: $(ETARGETS)
-
-$(ETARGETS):
-	$(EMAKE) $@
-#+END_SRC
-This sets up =install=, =compile=, and =test= as targets to be handled by
-EMake so that it can be invoked as, e.g., =make install=.
-
-In this directory, you'll find =sample.el=, =test-sample.el=, a =Makefile=,
-and a =.travis.yml= that demonstrates how to effectively use
-[[https://github.com/flycheck/emacs-travis][=emacs-travis.mk=]] and EMake to test your packages.
 
 * Extending EMake
 Targets can be created (or overridden) by defining a function called
