@@ -13,6 +13,9 @@ Things EMake will never do (or 'reasons you may still need Cask'):
   and =eval= commands)
 
 * Using EMake
+A practical demonstration is available in the =example= submodule which
+is also [[https://github.com/vermiculus/emake.el-example][hosted on GitHub]] and [[https://travis-ci.org/vermiculus/emake.el-example][hooked up to Travis]].
+
 EMake itself is driven by a few environment variables:
 - =PACKAGE_FILE= :: This is the Elisp file that contains the definition
                     of your package (e.g., =Author=, =Package-Version=,
