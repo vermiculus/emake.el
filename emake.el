@@ -63,11 +63,11 @@ Argument FORMAT is a format string.  Optional argument ARGS is a
 list of arguments for that format string."
   (apply #'message (concat "emake: " format) args))
 
-(defconst emake-package-file
+(defvar emake-package-file
   (getenv "PACKAGE_FILE")
   "The Elisp file with package headers.")
 
-(defconst emake-package-tests-file
+(defvar emake-package-tests-file
   (getenv "PACKAGE_TESTS")
   "The Elisp file with test definitions.")
 
@@ -76,7 +76,7 @@ list of arguments for that format string."
     (insert-file-contents-literally emake-package-file)
     (package-buffer-info)))
 
-(defconst emake-project-root
+(defvar emake-project-root
   (locate-dominating-file (or (file-name-directory emake-package-file)
                               default-directory)
                           emake-package-file)
@@ -86,7 +86,7 @@ list of arguments for that format string."
   (when-let ((deps (getenv env)))
     (mapcar #'downcase (split-string deps nil 'omit-nulls))))
 
-(defconst emake-package-archive-master-alist
+(defvar emake-package-archive-master-alist
   '(("gnu"          . "http://elpa.gnu.org/packages/")
     ("melpa"        . "http://melpa.org/packages/")
     ("melpa-stable" . "http://stable.melpa.org/packages/")
@@ -95,7 +95,7 @@ list of arguments for that format string."
 Key is the string name of the archive.
 Value is the URL at which the archive is hosted.")
 
-(defconst emake-test-runner-master-alist
+(defvar emake-test-runner-master-alist
   '(("ert" . (progn (require 'ert) 'ert-run-tests-batch-and-exit))
     ("buttercup" . (progn (require 'buttercup) 'buttercup-run-discover)))
   "Test-runner definition alist.
