@@ -111,10 +111,9 @@ pass.")
 
 (defun emake--genform-with-elpa (dir body)
   `(let ((package-user-dir (expand-file-name ,dir emake-project-root))
-         (package-archives nil))
-     (dolist (pair emake-package-archive-master-alist)
-       (when (member (car pair) emake-package-archives)
-         (push pair package-archives)))
+         (package-archives (seq-filter (lambda (pair)
+                                         (member (car pair) emake-package-archives))
+                                       emake-package-archive-master-alist)))
      (emake-task "initializing package.el"
        (package-initialize))
      ,@body))
