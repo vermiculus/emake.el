@@ -155,11 +155,11 @@ Optional argument TEST-RUNNER is a test-runner name in
 `emake-test-runner-master-alist' or the name of a function that
 runs the tests."
   (setq test-runner (or test-runner "ert"))
-  (emake-with-elpa-test
-   (emake-task (format "installing test suite dependencies into %s" package-user-dir)
-     (package-refresh-contents)
-     (emake--install
-      (mapcar #'intern (emake--clean-list "PACKAGE_TEST_DEPS")))))
+  (when-let ((test-dependencies (emake--clean-list "PACKAGE_TEST_DEPS")))
+    (emake-with-elpa-test
+     (emake-task (format "installing test suite dependencies into %s" package-user-dir)
+       (package-refresh-contents)
+       (emake--install (mapcar #'intern test-dependencies)))))
   (let ((entry (assoc-string test-runner emake-test-runner-master-alist)))
     (cond
      (entry
