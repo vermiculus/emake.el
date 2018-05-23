@@ -30,9 +30,19 @@
 ;;
 ;;     PACKAGE_FILE     := the root file of your package
 ;;     PACKAGE_TESTS    := the root file to load your tests
-;;     PACKAGE_LISP     := space-delimited list of Lisp files in this package
-;;     PACKAGE_ARCHIVES := space-delimited list of named ELPA archives; see also
-;;                         `emake-package-archive-master-alist'
+;;     PACKAGE_LISP     := space-delimited list of Lisp files in this
+;;                         package
+;;     PACKAGE_ARCHIVES := space-delimited list of named ELPA archives;
+;;                         see also `emake-package-archive-master-alist'
+;;
+;; There are certainly scenarios where a testing suite would want to
+;; use special packages in its own right, but not require them for its
+;; users.  For this case, a few more variables exist:
+;;
+;;     PACKAGE_TEST_DEPS     := space-delimited list of packages needed
+;;                              by the test suite
+;;     PACKAGE_TEST_ARCHIVES := like PACKAGE_ARCHIVES, but used for
+;;                              installing PACKAGE_TEST_DEPS.
 ;;
 ;; To debug Emacs-Make, set the environment variable EMACS_MAKE_DEBUG_MODE.
 ;;
@@ -72,12 +82,9 @@ list of arguments for that format string."
                           emake-package-file)
   "The folder `emake-package-file' is in.")
 
-(defconst emake-package-archives
-  (when-let ((deps (getenv "PACKAGE_ARCHIVES")))
-    (thread-last (split-string deps nil 'omit-nulls)
-      (mapcar #'downcase)))
-  "A list of names of archives in use by the package.
-Keys in `emake-package-archive-master-alist'.")
+(defun emake--clean-list (env)
+  (when-let ((deps (getenv env)))
+    (mapcar #'downcase (split-string deps nil 'omit-nulls))))
 
 (defconst emake-package-archive-master-alist
   '(("melpa" . "http://melpa.org/packages/")
@@ -107,16 +114,23 @@ pass.")
 (defmacro emake-with-elpa (&rest body)
   "Run BODY after setting up ELPA context."
   (declare (debug t))
-  (emake--genform-with-elpa ".elpa" body))
+  (emake--genform-with-elpa ".elpa" body "PACKAGE_ARCHIVES"))
 
-(defun emake--genform-with-elpa (dir body)
-  `(let ((package-user-dir (expand-file-name ,dir emake-project-root))
-         (package-archives (seq-filter (lambda (pair)
-                                         (member (car pair) emake-package-archives))
-                                       emake-package-archive-master-alist)))
-     (emake-task "initializing package.el"
-       (package-initialize))
-     ,@body))
+(defmacro emake-with-elpa-test (&rest body)
+  "Run BODY after setting up ELPA context."
+  (declare (debug t))
+  (emake--genform-with-elpa ".elpa.test" body "PACKAGE_TEST_ARCHIVES"))
+
+(defun emake--genform-with-elpa (dir body archives-env)
+  (let ((Sarchives (cl-gensym)))
+    `(let* ((,Sarchives (emake--clean-list ,archives-env))
+            (package-user-dir (expand-file-name ,dir emake-project-root))
+            (package-archives (seq-filter (lambda (pair)
+                                            (member (car pair) ,Sarchives))
+                                          emake-package-archive-master-alist)))
+       (emake-task "initializing package.el"
+         (package-initialize))
+       ,@body)))
 
 (defun emake (target)
   "Run `emake-my-TARGET' if bound, else `emake-TARGET'."
@@ -138,6 +152,11 @@ Optional argument TEST-RUNNER is a test-runner name in
 `emake-test-runner-master-alist' or the name of a function that
 runs the tests."
   (setq test-runner (or test-runner "ert"))
+  (emake-with-elpa-test
+   (emake-task (format "installing test suite dependencies into %s" package-user-dir)
+     (package-refresh-contents)
+     (emake--install
+      (mapcar #'intern (emake--clean-list "PACKAGE_TEST_DEPS")))))
   (let ((entry (assoc-string test-runner emake-test-runner-master-alist)))
     (cond
      (entry
@@ -173,19 +192,23 @@ dependencies."
      (package-refresh-contents)
 
      ;; install dependencies
-     (dolist (package (thread-last (package-desc-reqs emake-package-desc)
-                        (mapcar #'car)
-                        (delq 'emacs)))
-       (unless (package-installed-p package)
-         (ignore-errors
-           (package-install package)))))))
+     (emake--install
+      (thread-last (package-desc-reqs emake-package-desc)
+        (mapcar #'car)
+        (delq 'emacs))))))
+
+(defun emake--install (packages)
+  (dolist (package packages)
+    (unless (package-installed-p package)
+      (ignore-errors
+        (package-install package)))))
 
 (defun emake-compile ()
   "Compile all files in PACKAGE_LISP."
   (require 'bytecomp)
   (emake-with-elpa
    (add-to-list 'load-path emake-project-root)
-   (dolist (f (split-string (getenv "PACKAGE_LISP") nil 'omit-nulls))
+   (dolist (f (emake--clean-list "PACKAGE_LISP"))
      (emake-task (format "compiling %s" f)
        (byte-compile-file f)))))
 

@@ -23,6 +23,13 @@ EMake itself is driven by a few environment variables:
                     considered part of the package.
 - =PACKAGE_ARCHIVES= :: This contains a space-delimited list of
      =package.el= archives to use for resolving dependencies.
+If your test suite has extra dependencies that shouldn't be proper
+dependencies of the project as a whole, you can tell EMake what to do
+by configuring the following environment variables:
+- =PACKAGE_TEST_DEPS= :: This contains a space-delimited list of
+     package-names your test suite is dependent upon.
+- =PACKAGE_TEST_ARCHIVES= :: These archives will be used to install the
+     dependencies in =PACKAGE_TEST_DEPS= (and their dependencies, ...).
 
 The entry point to EMake is the function ~emake~ and is intended to be
 invoked as follows:
