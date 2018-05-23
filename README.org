@@ -21,8 +21,8 @@ EMake itself is driven by a few environment variables:
      running tests.
 - =PACKAGE_LISP= :: This contains a space-delimited list of files to be
                     considered part of the package.
-- =PACKAGE_ARCHIVES= :: This contains a list of =package.el= archives to
-     use for resolving dependencies.
+- =PACKAGE_ARCHIVES= :: This contains a space-delimited list of
+     =package.el= archives to use for resolving dependencies.
 
 The entry point to EMake is the function ~emake~ and is intended to be
 invoked as follows:
