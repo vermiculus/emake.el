@@ -96,7 +96,7 @@ pass.")
 
 (defmacro emake-task (description &rest body)
   "Run BODY wrapped by DESCRIPTION messages."
-  (declare (indent 1))
+  (declare (indent 1) (debug t))
   (let ((Sdescription (cl-gensym)))
     `(let ((,Sdescription (concat ,description "...")))
        (prog2
