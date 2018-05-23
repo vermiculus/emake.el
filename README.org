@@ -40,6 +40,12 @@ invoked as follows:
 emacs -batch -l emake.el --eval "(emake (pop argv))" target [args...]
 #+END_SRC
 
+Since this is just Elisp, other setup can be made by just evaluating
+some lisp in this invocation or loading an external file.  You might
+want to set ~byte-compile-error-on-warn~, for example, or maybe define
+new testing frameworks by extending ~emake-test-runner-master-alist~.
+It's just Elisp -- no funny business!
+
 * Extending EMake
 Targets can be created (or overridden) by defining a function called
 =emake-my-TARGET= (where =TARGET= is the name of your custom target)
