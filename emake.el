@@ -107,7 +107,10 @@ pass.")
 (defmacro emake-with-elpa (&rest body)
   "Run BODY after setting up ELPA context."
   (declare (debug t))
-  `(let ((package-user-dir (expand-file-name ".elpa" emake-project-root))
+  (emake--genform-with-elpa ".elpa" body))
+
+(defun emake--genform-with-elpa (dir body)
+  `(let ((package-user-dir (expand-file-name ,dir emake-project-root))
          (package-archives nil))
      (dolist (pair emake-package-archive-master-alist)
        (when (member (car pair) emake-package-archives)
