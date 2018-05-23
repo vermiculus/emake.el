@@ -94,7 +94,8 @@ Key is the string name of the archive.
 Value is the URL at which the archive is hosted.")
 
 (defconst emake-test-runner-master-alist
-  '(("ert" . (progn (require 'ert) 'ert-run-tests-batch-and-exit)))
+  '(("ert" . (progn (require 'ert) 'ert-run-tests-batch-and-exit))
+    ("buttercup" . (progn (require 'buttercup) 'buttercup-run-discover)))
   "Test-runner definition alist.
 Key is the string name of the test-runner.  Value is a form that,
 when evaluated, produces a defined function that will run all
