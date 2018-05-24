@@ -207,23 +207,48 @@ dependencies."
       (ignore-errors
         (package-install package)))))
 
+(defmacro emake-with-options (args options &rest body)
+  "With ARGS, determine and bind OPTIONS while executing BODY.
+OPTIONS is a list of (CLI-OPT BINDING [TRUE-VALUE]) lists.  If
+CLI-OPT is present in ARGS, then BINDING will be bound to
+TRUE-VALUE during execution of BODY."
+  (declare (indent 2))
+  (let (bindings (Sargs (cl-gensym)))
+    (dolist (option options)
+      (unless (member (length option) '(2 3))
+        (error "Wrong number of arguments in spec %S" option))
+      (let ((opt (car option))
+            (var (cadr option))
+            (val (or (= 2 (length option)) ; if there is no default value, use t
+                     (caddr option))))
+        (unless (stringp opt)
+          (error "Option must be a string literal: %S" opt))
+        (unless (symbolp var)
+          (error "Binding must be a symbol literal: %S" var))
+        (push (list var `(and (member ,(concat "~" opt) ,Sargs) ,val))
+              bindings)))
+    `(let ((,Sargs ,args))
+       (let ,(nreverse bindings)
+         ,@body))))
+
 (defun emake-compile (&rest opts)
   "Compile all files in PACKAGE_LISP."
   (require 'bytecomp)
-  (let ((byte-compile-error-on-warn (and (member "~error-on-warn" opts) t))
-        compile-buffer)
-    (emake--message "error-on-warn => %S" byte-compile-error-on-warn)
-    (emake-with-elpa
-     (add-to-list 'load-path emake-project-root)
-     (dolist (f (emake--clean-list "PACKAGE_LISP"))
-       (emake-task (format "compiling %s" f)
-         (byte-compile-file f)
-         (when (and byte-compile-error-on-warn
-                    (setq compile-buffer (get-buffer byte-compile-log-buffer)))
-           ;; double-check; e.g. (let (hi)) won't error otherwise
-           (with-current-buffer compile-buffer
-             (when (string-match "^.*:Warning: \\(.*\\)$" (buffer-string))
-               (error (match-string-no-properties 1 (buffer-string)))))))))))
+  (emake-with-options opts
+      (("error-on-warn" byte-compile-error-on-warn))
+    (let (compile-buffer)
+      (emake--message "error-on-warn => %S" byte-compile-error-on-warn)
+      (emake-with-elpa
+       (add-to-list 'load-path emake-project-root)
+       (dolist (f (emake--clean-list "PACKAGE_LISP"))
+         (emake-task (format "compiling %s" f)
+           (byte-compile-file f)
+           (when (and byte-compile-error-on-warn
+                      (setq compile-buffer (get-buffer byte-compile-log-buffer)))
+             ;; double-check; e.g. (let (hi)) won't error otherwise
+             (with-current-buffer compile-buffer
+               (when (string-match "^.*:Warning: \\(.*\\)$" (buffer-string))
+                 (error (match-string-no-properties 1 (buffer-string))))))))))))
 
 (provide 'emake)
 ;;; emake.el ends here
