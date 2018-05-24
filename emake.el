@@ -63,27 +63,31 @@ Argument FORMAT is a format string.  Optional argument ARGS is a
 list of arguments for that format string."
   (apply #'message (concat "emake: " format) args))
 
-(defvar emake-package-file
-  (getenv "PACKAGE_FILE")
-  "The Elisp file with package headers.")
+(defvar emake--env-cache nil
+  "Alist mapping environment variables to their values.")
 
-(defvar emake-package-tests-file
-  (getenv "PACKAGE_TESTS")
-  "The Elisp file with test definitions.")
+(defun emake--getenv (variable)
+  "Get the value of VARIABLE in the current environment."
+  (if-let ((entry (assoc-string variable emake--env-cache)))
+      (cdr entry))
+  (let ((val (getenv variable)))
+    (push (cons variable val) emake--env-cache)
+    val))
 
 (defvar emake-package-desc
   (with-temp-buffer
-    (insert-file-contents-literally emake-package-file)
+    (insert-file-contents-literally (emake--getenv "PACKAGE_FILE"))
     (package-buffer-info)))
 
 (defvar emake-project-root
-  (locate-dominating-file (or (file-name-directory emake-package-file)
-                              default-directory)
-                          emake-package-file)
-  "The folder `emake-package-file' is in.")
+  (let ((f (emake--getenv "PACKAGE_FILE")))
+    (locate-dominating-file (or (file-name-directory f)
+                                default-directory)
+                            f))
+  "The folder `PACKAGE_FILE' is in.")
 
 (defun emake--clean-list (env)
-  (when-let ((vals (getenv env)))
+  (when-let ((vals (emake--getenv env)))
     (split-string vals nil 'omit-nulls)))
 
 (defvar emake-package-archive-master-alist
@@ -184,23 +188,24 @@ runs the tests."
   (unless (functionp test-runner)
     (error "Test-runner not defined!"))
 
-  (let ((default-directory emake-project-root))
+  (let ((default-directory emake-project-root)
+        (tests-file (emake--getenv "PACKAGE_TESTS")))
     (emake-with-elpa
      (add-to-list 'load-path emake-project-root)
-     (when (file-readable-p emake-package-tests-file)
-       (emake-task (format "loading test definitions in %s" emake-package-tests-file)
+     (when (file-readable-p tests-file)
+       (emake-task (format "loading test definitions in %s" tests-file)
          ;; add the package being tested to `load-path' so it can be required
-         (add-to-list 'load-path (file-name-directory emake-package-tests-file))
+         (add-to-list 'load-path (file-name-directory tests-file))
 
          ;; load the file with tests
-         (load emake-package-tests-file)))
+         (load tests-file)))
 
      ;; run the tests and exit with an appropriate status
      (funcall test-runner))))
 
 (defun emake-install ()
   "Install dependencies.
-Required packages include those that `emake-package-file' lists as
+Required packages include those that `PACKAGE_FILE' lists as
 dependencies."
   (emake-with-elpa
    (emake-task (format "installing in %s" package-user-dir)
