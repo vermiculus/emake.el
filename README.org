@@ -37,7 +37,7 @@ by configuring the following environment variables:
 The entry point to EMake is the function ~emake~ and is intended to be
 invoked as follows:
 #+BEGIN_SRC sh
-emacs -batch -l emake.el --eval "(emake (pop argv))" target [args...]
+  emacs -batch -l emake.el --eval "(emake (pop argv))" target [args...]
 #+END_SRC
 
 Since this is just Elisp, other setup can be made by just evaluating
@@ -76,10 +76,10 @@ Targets can be created (or overridden) by defining a function called
 =emake-my-TARGET= (where =TARGET= is the name of your custom target)
 before calling the ~emake~ function.
 
-For example, if =custom-targets.el= contains a custom target called
-~emake-my-cake~ and you invoke EMake as
+For example, if =custom.el= contains a custom target called
+~emake-my-cake~ and you invoke EMake as:
 #+BEGIN_SRC sh
-emacs -batch -l emake.el -l custom-targets.el --eval "(emake (pop argv))"
+  emacs -batch -l emake.el -l custom.el --eval "(emake (pop argv))"
 #+END_SRC
 and run ~make cake~, your function ~emake-my-cake~ will be executed after
 some output boilerplate.
