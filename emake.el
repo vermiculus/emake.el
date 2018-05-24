@@ -140,8 +140,7 @@ Value is the URL at which the archive is hosted.")
   "Ensure each package in PACKAGES is installed."
   (dolist (package packages)
     (unless (package-installed-p package)
-      (ignore-errors
-        (package-install package)))))
+      (package-install package))))
 
 ;;; Running targets
 
