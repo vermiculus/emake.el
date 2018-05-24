@@ -120,12 +120,12 @@ ENV is expected to be a space-separated string."
 Key is the string name of the archive.
 Value is the URL at which the archive is hosted.")
 
-(defun emake--genform-with-elpa (dir body archives-env)
+(defun emake--genform-with-elpa (dir archives-env body)
   "Generate a 'with-elpa' macro form.
-DIR is the directory to use for `package-user-dir'.  BODY is the
-executable body of the macro.  ARCHIVES-ENV is the environment
-variable used to determine the available archives.  See also
-`emake-package-archive-master-alist'."
+DIR is the directory to use for `package-user-dir'.  ARCHIVES-ENV
+is the environment variable used to determine the available
+archives.  See also `emake-package-archive-master-alist'.  BODY
+is the executable body of the macro."
   (let ((Sarchives (cl-gensym)))
     `(let* ((,Sarchives (emake--clean-list ,archives-env))
             (package-user-dir (expand-file-name ,dir emake-project-root))
@@ -139,12 +139,12 @@ variable used to determine the available archives.  See also
 (defmacro emake-with-elpa (&rest body)
   "Run BODY after setting up ELPA context."
   (declare (debug t))
-  (emake--genform-with-elpa ".elpa" body "PACKAGE_ARCHIVES"))
+  (emake--genform-with-elpa ".elpa" "PACKAGE_ARCHIVES" body))
 
 (defmacro emake-with-elpa-test (&rest body)
   "Run BODY after setting up ELPA context."
   (declare (debug t))
-  (emake--genform-with-elpa ".elpa.test" body "PACKAGE_TEST_ARCHIVES"))
+  (emake--genform-with-elpa ".elpa.test" "PACKAGE_TEST_ARCHIVES" body))
 
 (defun emake--install (packages)
   "Ensure each package in PACKAGES is installed."
