@@ -269,11 +269,13 @@ just `error' out).  This function hopes to hack around this
 limitation by throwing an error if the `*Warnings*' buffer
 created by `checkdoc-file' is non-empty."
   (require 'checkdoc)
-  (mapc #'checkdoc-file
-        (emake--clean-list "PACKAGE_LISP"))
-  (with-current-buffer "*Warnings*"
-    (unless (= 0 (buffer-size))
-      (error "Checkdoc issues detected"))))
+  (let ((guess-checkdoc-error-buffer "*Warnings*"))
+    (kill-buffer guess-checkdoc-error-buffer)
+    (mapc #'checkdoc-file
+          (emake--clean-list "PACKAGE_LISP"))
+    (with-current-buffer guess-checkdoc-error-buffer
+      (unless (= 0 (buffer-size))
+        (error "Checkdoc issues detected")))))
 
 (provide 'emake)
 ;;; emake.el ends here
