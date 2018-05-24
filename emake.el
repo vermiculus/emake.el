@@ -98,15 +98,19 @@ ENV is expected to be a space-separated string."
 ;;; Package metadata
 
 (defvar emake-package-desc
-  (with-temp-buffer
-    (insert-file-contents-literally (emake--getenv "PACKAGE_FILE"))
-    (package-buffer-info)))
+  (when-let ((package-file (emake--getenv "PACKAGE_FILE")))
+    (when (file-readable-p package-file)
+      (with-temp-buffer
+        (insert-file-contents-literally package-file)
+        (package-buffer-info))))
+  "Package description corresponding to the code in PACKAGE_FILE.")
 
 (defvar emake-project-root
-  (let ((f (emake--getenv "PACKAGE_FILE")))
-    (locate-dominating-file (or (file-name-directory f)
-                                default-directory)
-                            f))
+  (when-let ((package-file (emake--getenv "PACKAGE_FILE")))
+    (when (file-readable-p package-file)
+      (locate-dominating-file (or (file-name-directory package-file)
+                                  default-directory)
+                              package-file)))
   "The folder `PACKAGE_FILE' is in.")
 
 ;;; Installing dependencies
