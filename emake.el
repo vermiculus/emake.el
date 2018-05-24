@@ -224,7 +224,8 @@ Several OPTIONS are available:
                       (setq compile-buffer (get-buffer byte-compile-log-buffer)))
              ;; double-check; e.g. (let (hi)) won't error otherwise
              (with-current-buffer compile-buffer
-               (when (string-match "^.*:\\(Error\\|Warning\\): .*$" (buffer-string))
+               (goto-char (point-min))
+               (when (re-search-forward "^.*:\\(Error\\|Warning\\): .*$" nil t)
                  (error "There were compile-time errors"))))))))))
 
 ;;; Running tests
