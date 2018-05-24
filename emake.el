@@ -83,8 +83,8 @@ list of arguments for that format string."
   "The folder `emake-package-file' is in.")
 
 (defun emake--clean-list (env)
-  (when-let ((deps (getenv env)))
-    (mapcar #'downcase (split-string deps nil 'omit-nulls))))
+  (when-let ((vals (getenv env)))
+    (split-string vals nil 'omit-nulls)))
 
 (defvar emake-package-archive-master-alist
   '(("gnu"          . "http://elpa.gnu.org/packages/")
