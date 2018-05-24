@@ -207,14 +207,23 @@ dependencies."
       (ignore-errors
         (package-install package)))))
 
-(defun emake-compile ()
+(defun emake-compile (&rest opts)
   "Compile all files in PACKAGE_LISP."
   (require 'bytecomp)
-  (emake-with-elpa
-   (add-to-list 'load-path emake-project-root)
-   (dolist (f (emake--clean-list "PACKAGE_LISP"))
-     (emake-task (format "compiling %s" f)
-       (byte-compile-file f)))))
+  (let ((byte-compile-error-on-warn (and (member "~error-on-warn" opts) t))
+        compile-buffer)
+    (emake--message "error-on-warn => %S" byte-compile-error-on-warn)
+    (emake-with-elpa
+     (add-to-list 'load-path emake-project-root)
+     (dolist (f (emake--clean-list "PACKAGE_LISP"))
+       (emake-task (format "compiling %s" f)
+         (byte-compile-file f)
+         (when (and byte-compile-error-on-warn
+                    (setq compile-buffer (get-buffer byte-compile-log-buffer)))
+           ;; double-check; e.g. (let (hi)) won't error otherwise
+           (with-current-buffer compile-buffer
+             (when (string-match "^.*:Warning: \\(.*\\)$" (buffer-string))
+               (error (match-string-no-properties 1 (buffer-string)))))))))))
 
 (provide 'emake)
 ;;; emake.el ends here

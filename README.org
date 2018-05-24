@@ -56,6 +56,9 @@ dependencies (in the =Package-Requires= header) from =PACKAGE_ARCHIVES=.
 
 *** =compile=
 Invoking =$(EMAKE) compile= byte-compiles all files in =PACKAGE_LISP=.
+You can provide the optional argument =~error-on-warn= to instruct the
+byte-compiler to error-out on compilation warnings (like unused local
+bindings or non-namespaced variables).
 
 *** =test=
 Invokine =$(EMAKE) test= kicks off the automated tests for your project.
