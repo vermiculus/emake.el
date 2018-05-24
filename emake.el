@@ -178,7 +178,7 @@ TRUE-VALUE during execution of BODY."
           (error "Option must be a string literal: %S" opt))
         (unless (symbolp var)
           (error "Binding must be a symbol literal: %S" var))
-        (push (list var `(and (member ,(concat "~" opt) ,Sargs) ,val))
+        (push (list var `(if (member ,(concat "~" opt) ,Sargs) ,val ,var))
               bindings)))
     `(let ((,Sargs ,args))
        (let ,(nreverse bindings)
