@@ -1,10 +1,11 @@
-;;; emake.el --- simple, transparent functionality for automated Elisp testing  -*- lexical-binding: t; -*-
+;;; emake.el --- Simple automated Elisp testing  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2018  Sean Allred
 
 ;; Author: Sean Allred <code@seanallred.com>
 ;; Keywords: tools, lisp
 ;; Homepage: https://github.com/vermiculus/emake.el
+;; Package-requires: ((emacs "25"))
 ;; Package-Version: 0.1
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -89,6 +90,8 @@ list of arguments for that format string."
     val))
 
 (defun emake--clean-list (env)
+  "Return a list made from the environment variable ENV.
+ENV is expected to be a space-separated string."
   (when-let ((vals (emake--getenv env)))
     (split-string vals nil 'omit-nulls)))
 
@@ -147,7 +150,9 @@ Value is the URL at which the archive is hosted.")
 ;;; Running targets
 
 (defun emake (target)
-  "Run `emake-my-TARGET' if bound, else `emake-TARGET'."
+  "Search for a function matching TARGET and execute it.
+
+The executed function is emake-my-TARGET if bound, else emake-TARGET."
   (let ((fun (intern (format "emake-my-%s" target))))
     (unless (fboundp fun)
       (setq fun (intern (format "emake-%s" target))))
@@ -201,7 +206,10 @@ dependencies."
         (delq 'emacs))))))
 
 (defun emake-compile (&rest opts)
-  "Compile all files in PACKAGE_LISP."
+  "Compile all files in PACKAGE_LISP.
+
+Bind `byte-compile-error-on-warn' based on the presence of
+`~error-on-warn' in OPTS."
   (require 'bytecomp)
   (emake-with-options opts
       (("error-on-warn" byte-compile-error-on-warn))
@@ -242,7 +250,7 @@ defined tests and exit Emacs with code 0 if and only if all tests
 pass.")
 
 (defun emake-test (&optional test-runner)
-  "Run all tests in \"PACKAGE-NAME-test.el\".
+  "Run every test in \"PACKAGE-NAME-test.el\".
 Optional argument TEST-RUNNER is a test-runner name in
 `emake-test-runner-master-alist' or the name of a function that
 runs the tests."
