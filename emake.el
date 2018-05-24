@@ -224,8 +224,8 @@ Several OPTIONS are available:
                       (setq compile-buffer (get-buffer byte-compile-log-buffer)))
              ;; double-check; e.g. (let (hi)) won't error otherwise
              (with-current-buffer compile-buffer
-               (when (string-match "^.*:Warning: \\(.*\\)$" (buffer-string))
-                 (error (match-string-no-properties 1 (buffer-string))))))))))))
+               (when (string-match "^.*:\\(Error\\|Warning\\): .*$" (buffer-string))
+                 (error "There were compile-time errors"))))))))))
 
 ;;; Running tests
 
