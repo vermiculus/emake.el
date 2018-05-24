@@ -63,6 +63,18 @@ Argument FORMAT is a format string.  Optional argument ARGS is a
 list of arguments for that format string."
   (apply #'message (concat "emake: " format) args))
 
+(defmacro emake-task (description &rest body)
+  "Run BODY wrapped by DESCRIPTION messages."
+  (declare (indent 1) (debug t))
+  (let ((Sdescription (cl-gensym)))
+    `(let ((,Sdescription (concat ,description "...")))
+       (prog2
+           (emake--message ,Sdescription)
+           (progn ,@body)
+         (emake--message (concat ,Sdescription "done"))))))
+
+;;; Dealing with environment variables
+
 (defvar emake--env-cache nil
   "Alist mapping environment variables to their values.")
 
@@ -73,6 +85,12 @@ list of arguments for that format string."
   (let ((val (getenv variable)))
     (push (cons variable val) emake--env-cache)
     val))
+
+(defun emake--clean-list (env)
+  (when-let ((vals (emake--getenv env)))
+    (split-string vals nil 'omit-nulls)))
+
+;;; Package metadata
 
 (defvar emake-package-desc
   (with-temp-buffer
@@ -86,9 +104,7 @@ list of arguments for that format string."
                             f))
   "The folder `PACKAGE_FILE' is in.")
 
-(defun emake--clean-list (env)
-  (when-let ((vals (emake--getenv env)))
-    (split-string vals nil 'omit-nulls)))
+;;; Installing dependencies
 
 (defvar emake-package-archive-master-alist
   '(("gnu"          . "http://elpa.gnu.org/packages/")
@@ -98,36 +114,6 @@ list of arguments for that format string."
   "Archive definition alist.
 Key is the string name of the archive.
 Value is the URL at which the archive is hosted.")
-
-(defvar emake-test-runner-master-alist
-  '(("buttercup"    . (progn (require 'buttercup)
-                             'buttercup-run-discover))
-
-    ("checkdoc"     . 'emake--test-helper-checkdoc)
-
-    ("ert"          . (progn (require 'ert)
-                             'ert-run-tests-batch-and-exit))
-
-    ("package-lint" . (progn (require 'package-lint)
-                             ;; Dispatch function uses this variable; fake it
-                             (setq command-line-args-left
-                                   (emake--clean-list "PACKAGE_LISP"))
-                             'package-lint-batch-and-exit)))
-  "Test-runner definition alist.
-Key is the string name of the test-runner.  Value is a form that,
-when evaluated, produces a defined function that will run all
-defined tests and exit Emacs with code 0 if and only if all tests
-pass.")
-
-(defmacro emake-task (description &rest body)
-  "Run BODY wrapped by DESCRIPTION messages."
-  (declare (indent 1) (debug t))
-  (let ((Sdescription (cl-gensym)))
-    `(let ((,Sdescription (concat ,description "...")))
-       (prog2
-           (emake--message ,Sdescription)
-           (progn ,@body)
-         (emake--message (concat ,Sdescription "done"))))))
 
 (defmacro emake-with-elpa (&rest body)
   "Run BODY after setting up ELPA context."
@@ -150,6 +136,15 @@ pass.")
          (package-initialize))
        ,@body)))
 
+(defun emake--install (packages)
+  "Ensure each package in PACKAGES is installed."
+  (dolist (package packages)
+    (unless (package-installed-p package)
+      (ignore-errors
+        (package-install package)))))
+
+;;; Running targets
+
 (defun emake (target)
   "Run `emake-my-TARGET' if bound, else `emake-TARGET'."
   (let ((fun (intern (format "emake-my-%s" target))))
@@ -163,6 +158,87 @@ pass.")
                     target fun command-line-args-left)
     (apply fun (prog1 command-line-args-left
                  (setq command-line-args-left nil)))))
+
+(defmacro emake-with-options (args options &rest body)
+  "With ARGS, determine and bind OPTIONS while executing BODY.
+OPTIONS is a list of (CLI-OPT BINDING [TRUE-VALUE]) lists.  If
+CLI-OPT is present in ARGS, then BINDING will be bound to
+TRUE-VALUE during execution of BODY."
+  (declare (indent 2))
+  (let (bindings (Sargs (cl-gensym)))
+    (dolist (option options)
+      (unless (member (length option) '(2 3))
+        (error "Wrong number of arguments in spec %S" option))
+      (let ((opt (car option))
+            (var (cadr option))
+            (val (or (= 2 (length option)) ; if there is no default value, use t
+                     (caddr option))))
+        (unless (stringp opt)
+          (error "Option must be a string literal: %S" opt))
+        (unless (symbolp var)
+          (error "Binding must be a symbol literal: %S" var))
+        (push (list var `(and (member ,(concat "~" opt) ,Sargs) ,val))
+              bindings)))
+    `(let ((,Sargs ,args))
+       (let ,(nreverse bindings)
+         ,@body))))
+
+;;; Targets
+
+(defun emake-install ()
+  "Install dependencies.
+Required packages include those that `PACKAGE_FILE' lists as
+dependencies."
+  (emake-with-elpa
+   (emake-task (format "installing in %s" package-user-dir)
+     (package-refresh-contents)
+
+     ;; install dependencies
+     (emake--install
+      (thread-last (package-desc-reqs emake-package-desc)
+        (mapcar #'car)
+        (delq 'emacs))))))
+
+(defun emake-compile (&rest opts)
+  "Compile all files in PACKAGE_LISP."
+  (require 'bytecomp)
+  (emake-with-options opts
+      (("error-on-warn" byte-compile-error-on-warn))
+    (let (compile-buffer)
+      (emake--message "error-on-warn => %S" byte-compile-error-on-warn)
+      (emake-with-elpa
+       (add-to-list 'load-path emake-project-root)
+       (dolist (f (emake--clean-list "PACKAGE_LISP"))
+         (emake-task (format "compiling %s" f)
+           (byte-compile-file f)
+           (when (and byte-compile-error-on-warn
+                      (setq compile-buffer (get-buffer byte-compile-log-buffer)))
+             ;; double-check; e.g. (let (hi)) won't error otherwise
+             (with-current-buffer compile-buffer
+               (when (string-match "^.*:Warning: \\(.*\\)$" (buffer-string))
+                 (error (match-string-no-properties 1 (buffer-string))))))))))))
+
+;;; Running tests
+
+(defvar emake-test-runner-master-alist
+  '(("buttercup"    . (progn (require 'buttercup)
+                             'buttercup-run-discover))
+
+    ("checkdoc"     . 'emake--test-helper-checkdoc)
+
+    ("ert"          . (progn (require 'ert)
+                             'ert-run-tests-batch-and-exit))
+
+    ("package-lint" . (progn (require 'package-lint)
+                             ;; Dispatch function uses this variable; fake it
+                             (setq command-line-args-left
+                                   (emake--clean-list "PACKAGE_LISP"))
+                             'package-lint-batch-and-exit)))
+  "Test-runner definition alist.
+Key is the string name of the test-runner.  Value is a form that,
+when evaluated, produces a defined function that will run all
+defined tests and exit Emacs with code 0 if and only if all tests
+pass.")
 
 (defun emake-test (&optional test-runner)
   "Run all tests in \"PACKAGE-NAME-test.el\".
@@ -202,69 +278,6 @@ runs the tests."
 
      ;; run the tests and exit with an appropriate status
      (funcall test-runner))))
-
-(defun emake-install ()
-  "Install dependencies.
-Required packages include those that `PACKAGE_FILE' lists as
-dependencies."
-  (emake-with-elpa
-   (emake-task (format "installing in %s" package-user-dir)
-     (package-refresh-contents)
-
-     ;; install dependencies
-     (emake--install
-      (thread-last (package-desc-reqs emake-package-desc)
-        (mapcar #'car)
-        (delq 'emacs))))))
-
-(defun emake--install (packages)
-  (dolist (package packages)
-    (unless (package-installed-p package)
-      (ignore-errors
-        (package-install package)))))
-
-(defmacro emake-with-options (args options &rest body)
-  "With ARGS, determine and bind OPTIONS while executing BODY.
-OPTIONS is a list of (CLI-OPT BINDING [TRUE-VALUE]) lists.  If
-CLI-OPT is present in ARGS, then BINDING will be bound to
-TRUE-VALUE during execution of BODY."
-  (declare (indent 2))
-  (let (bindings (Sargs (cl-gensym)))
-    (dolist (option options)
-      (unless (member (length option) '(2 3))
-        (error "Wrong number of arguments in spec %S" option))
-      (let ((opt (car option))
-            (var (cadr option))
-            (val (or (= 2 (length option)) ; if there is no default value, use t
-                     (caddr option))))
-        (unless (stringp opt)
-          (error "Option must be a string literal: %S" opt))
-        (unless (symbolp var)
-          (error "Binding must be a symbol literal: %S" var))
-        (push (list var `(and (member ,(concat "~" opt) ,Sargs) ,val))
-              bindings)))
-    `(let ((,Sargs ,args))
-       (let ,(nreverse bindings)
-         ,@body))))
-
-(defun emake-compile (&rest opts)
-  "Compile all files in PACKAGE_LISP."
-  (require 'bytecomp)
-  (emake-with-options opts
-      (("error-on-warn" byte-compile-error-on-warn))
-    (let (compile-buffer)
-      (emake--message "error-on-warn => %S" byte-compile-error-on-warn)
-      (emake-with-elpa
-       (add-to-list 'load-path emake-project-root)
-       (dolist (f (emake--clean-list "PACKAGE_LISP"))
-         (emake-task (format "compiling %s" f)
-           (byte-compile-file f)
-           (when (and byte-compile-error-on-warn
-                      (setq compile-buffer (get-buffer byte-compile-log-buffer)))
-             ;; double-check; e.g. (let (hi)) won't error otherwise
-             (with-current-buffer compile-buffer
-               (when (string-match "^.*:Warning: \\(.*\\)$" (buffer-string))
-                 (error (match-string-no-properties 1 (buffer-string))))))))))))
 
 (defun emake--test-helper-checkdoc ()
   "Helper function for `checkdoc' test backend.
