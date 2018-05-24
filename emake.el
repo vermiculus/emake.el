@@ -57,7 +57,7 @@
 (require 'subr-x)
 (require 'cl-lib)
 
-(defun emake-message (format &rest args)
+(defun emake--message (format &rest args)
   "Print a message to standard out.
 Argument FORMAT is a format string.  Optional argument ARGS is a
 list of arguments for that format string."
@@ -110,9 +110,9 @@ pass.")
   (let ((Sdescription (cl-gensym)))
     `(let ((,Sdescription (concat ,description "...")))
        (prog2
-           (emake-message ,Sdescription)
+           (emake--message ,Sdescription)
            (progn ,@body)
-         (emake-message (concat ,Sdescription "done"))))))
+         (emake--message (concat ,Sdescription "done"))))))
 
 (defmacro emake-with-elpa (&rest body)
   "Run BODY after setting up ELPA context."
@@ -142,10 +142,10 @@ pass.")
       (setq fun (intern (format "emake-%s" target))))
     (unless (fboundp fun)
       (error "%S target not found" target))
-    (emake-message (if command-line-args-left
-                       "Running target %S with function `%S' with arguments %S"
-                     "Running target %S with function `%S'")
-                   target fun command-line-args-left)
+    (emake--message (if command-line-args-left
+                        "Running target %S with function `%S' with arguments %S"
+                      "Running target %S with function `%S'")
+                    target fun command-line-args-left)
     (apply fun (prog1 command-line-args-left
                  (setq command-line-args-left nil)))))
 
@@ -168,7 +168,7 @@ runs the tests."
       (setq test-runner (intern test-runner)))
      (t
       (error "%S test-runner not defined" test-runner))))
-  (emake-message "Detected test-runner as `%S'" test-runner)
+  (emake--message "Detected test-runner as `%S'" test-runner)
 
   (unless (fboundp test-runner)
     (error "Test-runner not defined!"))
