@@ -100,7 +100,8 @@ Value is the URL at which the archive is hosted.")
     ("buttercup" . (progn (require 'buttercup) 'buttercup-run-discover))
     ("package-lint" . (progn (require 'package-lint)
                              (setq command-line-args-left (emake--clean-list "PACKAGE_LISP"))
-                             'package-lint-batch-and-exit)))
+                             'package-lint-batch-and-exit))
+    ("checkdoc" . 'emake--test-helper-checkdoc))
   "Test-runner definition alist.
 Key is the string name of the test-runner.  Value is a form that,
 when evaluated, produces a defined function that will run all
@@ -254,6 +255,20 @@ TRUE-VALUE during execution of BODY."
              (with-current-buffer compile-buffer
                (when (string-match "^.*:Warning: \\(.*\\)$" (buffer-string))
                  (error (match-string-no-properties 1 (buffer-string))))))))))))
+
+(defun emake--test-helper-checkdoc ()
+  "Helper function for `checkdoc' test backend.
+`checkdoc' apparently does not have a means to determine if a
+given file has errors and return those errors as data (or even
+just `error' out).  This function hopes to hack around this
+limitation by throwing an error if the `*Warnings*' buffer
+created by `checkdoc-file' is non-empty."
+  (require 'checkdoc)
+  (mapc #'checkdoc-file
+        (emake--clean-list "PACKAGE_LISP"))
+  (with-current-buffer "*Warnings*"
+    (unless (= 0 (buffer-size))
+      (error "Checkdoc issues detected"))))
 
 (provide 'emake)
 ;;; emake.el ends here
