@@ -96,12 +96,19 @@ Key is the string name of the archive.
 Value is the URL at which the archive is hosted.")
 
 (defvar emake-test-runner-master-alist
-  '(("ert" . (progn (require 'ert) 'ert-run-tests-batch-and-exit))
-    ("buttercup" . (progn (require 'buttercup) 'buttercup-run-discover))
+  '(("buttercup"    . (progn (require 'buttercup)
+                             'buttercup-run-discover))
+
+    ("checkdoc"     . 'emake--test-helper-checkdoc)
+
+    ("ert"          . (progn (require 'ert)
+                             'ert-run-tests-batch-and-exit))
+
     ("package-lint" . (progn (require 'package-lint)
-                             (setq command-line-args-left (emake--clean-list "PACKAGE_LISP"))
-                             'package-lint-batch-and-exit))
-    ("checkdoc" . 'emake--test-helper-checkdoc))
+                             ;; Dispatch function uses this variable; fake it
+                             (setq command-line-args-left
+                                   (emake--clean-list "PACKAGE_LISP"))
+                             'package-lint-batch-and-exit)))
   "Test-runner definition alist.
 Key is the string name of the test-runner.  Value is a form that,
 when evaluated, produces a defined function that will run all
