@@ -61,7 +61,7 @@ byte-compiler to error-out on compilation warnings (like unused local
 bindings or non-namespaced variables).
 
 *** =test=
-Invokine =$(EMAKE) test= kicks off the automated tests for your project.
+Invoking =$(EMAKE) test= kicks off the automated tests for your project.
 If you're using a framework that can't discover test definitions for
 you, you can define =PACKAGE_TESTS= to be the file to load those
 definitions from before running the tests.
