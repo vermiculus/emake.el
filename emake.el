@@ -1,11 +1,11 @@
-;;; emake.el --- Simple automated Elisp testing  -*- lexical-binding: t; -*-
+;;; emake.el --- simple automated Elisp testing  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2018  Sean Allred
 
 ;; Author: Sean Allred <code@seanallred.com>
 ;; Keywords: tools, lisp
 ;; Homepage: https://github.com/vermiculus/emake.el
-;; Package-requires: ((emacs "25"))
+;; Package-Requires: ((emacs "25"))
 ;; Package-Version: 0.1
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -205,13 +205,13 @@ dependencies."
         (mapcar #'car)
         (delq 'emacs))))))
 
-(defun emake-compile (&rest opts)
+(defun emake-compile (&rest options)
   "Compile all files in PACKAGE_LISP.
+Several OPTIONS are available:
 
-Bind `byte-compile-error-on-warn' based on the presence of
-`~error-on-warn' in OPTS."
+`~error-on-warn': set `byte-compile-error-on-warn'"
   (require 'bytecomp)
-  (emake-with-options opts
+  (emake-with-options options
       (("error-on-warn" byte-compile-error-on-warn))
     (let (compile-buffer)
       (emake--message "error-on-warn => %S" byte-compile-error-on-warn)
@@ -250,7 +250,7 @@ defined tests and exit Emacs with code 0 if and only if all tests
 pass.")
 
 (defun emake-test (&optional test-runner)
-  "Run every test in \"PACKAGE-NAME-test.el\".
+  "Run every test in PACKAGE_TESTS.
 Optional argument TEST-RUNNER is a test-runner name in
 `emake-test-runner-master-alist' or the name of a function that
 runs the tests."
