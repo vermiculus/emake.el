@@ -173,7 +173,9 @@ runs the tests."
       (error "%S test-runner not defined" test-runner))))
   (emake--message "Detected test-runner as `%S'" test-runner)
 
-  (unless (fboundp test-runner)
+  (unless (or (functionp test-runner)
+              (and (symbolp test-runner)
+                   (fboundp test-runner)))
     (error "Test-runner not defined!"))
 
   (let ((default-directory emake-project-root))
