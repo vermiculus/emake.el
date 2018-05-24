@@ -22,7 +22,9 @@
 
 ;;; Commentary:
 
-;; Based on http://edkolev.github.io/posts/2017-09-10-travis-for-emacs-packages.html
+;; Original versions based on:
+;;
+;;     URL `http://evgeni.io/posts/travis-for-emacs-packages/'
 ;;
 ;; Emacs-Make is driven by environment variables to know what to do.
 ;; Before invoking `emake', ensure the following variables are set
