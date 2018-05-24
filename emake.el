@@ -84,10 +84,10 @@ list of arguments for that format string."
 (defun emake--getenv (variable)
   "Get the value of VARIABLE in the current environment."
   (if-let ((entry (assoc-string variable emake--env-cache)))
-      (cdr entry))
-  (let ((val (getenv variable)))
-    (push (cons variable val) emake--env-cache)
-    val))
+      (cdr entry)
+    (let ((val (getenv variable)))
+      (push (cons variable val) emake--env-cache)
+      val)))
 
 (defun emake--clean-list (env)
   "Return a list made from the environment variable ENV.
