@@ -150,8 +150,32 @@ is the executable body of the macro."
   (declare (debug t))
   (emake--genform-with-elpa ".elpa.test" "PACKAGE_TEST_ARCHIVES" body))
 
+(defun emake--package-download-archives (archives)
+  "Download ARCHIVES if they do not exist locally.
+ARCHIVES is a list of archives like `package-archives'."
+  (let (empty-archives)
+    (dolist (archive archives)
+      ;; Determine all the archives that don't yet exist.
+      ;; package.el uses a predictable format for this;
+      ;; see `package-read-archive-contents'.
+      (let ((archive-contents (format "%s/archives/%s/archive-contents"
+                                      package-user-dir
+                                      (car archive))))
+        (if (file-exists-p archive-contents)
+            (emake--message "Already downloaded `%s' to %s"
+                            (car archive)
+                            (file-relative-name archive-contents))
+          (push archive empty-archives))))
+    (when empty-archives
+      (emake-task (format "[%s/] downloading archives: %S"
+                          (file-relative-name package-user-dir)
+                          empty-archives)
+        (let ((package-archives empty-archives))
+          (package-refresh-contents))))))
+
 (defun emake--install (packages)
   "Ensure each package in PACKAGES is installed."
+  (emake--package-download-archives package-archives)
   (dolist (package packages)
     (unless (package-installed-p package)
       (package-install package))))
@@ -206,8 +230,6 @@ Required packages include those that `PACKAGE_FILE' lists as
 dependencies."
   (emake-with-elpa
    (emake-task (format "installing in %s" package-user-dir)
-     (package-refresh-contents)
-
      ;; install dependencies
      (emake--install
       (thread-last (package-desc-reqs emake-package-desc)
@@ -268,7 +290,6 @@ runs the tests."
   (when-let ((test-dependencies (emake--clean-list "PACKAGE_TEST_DEPS")))
     (emake-with-elpa-test
      (emake-task (format "installing test suite dependencies into %s" package-user-dir)
-       (package-refresh-contents)
        (emake--install (mapcar #'intern test-dependencies)))))
   (let ((entry (assoc-string test-runner emake-test-runner-master-alist)))
     (cond
