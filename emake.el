@@ -162,7 +162,7 @@ ARCHIVES is a list of archives like `package-archives'."
                                       package-user-dir
                                       (car archive))))
         (if (file-exists-p archive-contents)
-            (emake--message "Already downloaded `%s' to %s"
+            (emake--message "Already downloaded `%s' to ./%s"
                             (car archive)
                             (file-relative-name archive-contents))
           (push archive empty-archives))))
@@ -229,7 +229,7 @@ TRUE-VALUE during execution of BODY."
 Required packages include those that `PACKAGE_FILE' lists as
 dependencies."
   (emake-with-elpa
-   (emake-task (format "installing in %s" package-user-dir)
+   (emake-task (format "installing in ./%s" (file-relative-name package-user-dir))
      ;; install dependencies
      (emake--install
       (thread-last (package-desc-reqs emake-package-desc)
@@ -289,7 +289,8 @@ runs the tests."
   (setq test-runner (or test-runner "ert"))
   (when-let ((test-dependencies (emake--clean-list "PACKAGE_TEST_DEPS")))
     (emake-with-elpa-test
-     (emake-task (format "installing test suite dependencies into %s" package-user-dir)
+     (emake-task (format "installing test suite dependencies into ./%s"
+                         (file-relative-name package-user-dir))
        (emake--install (mapcar #'intern test-dependencies)))))
   (let ((entry (assoc-string test-runner emake-test-runner-master-alist)))
     (cond
@@ -306,6 +307,7 @@ runs the tests."
 
   (let ((default-directory emake-project-root)
         (tests-file (emake--getenv "PACKAGE_TESTS")))
+    (emake--message "Current directory: %s" default-directory)
     (emake-with-elpa
      (add-to-list 'load-path emake-project-root)
      (when (file-readable-p tests-file)
