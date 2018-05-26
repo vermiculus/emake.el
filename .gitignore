@@ -1,3 +1,4 @@
 *.elc
 /emake.el
 /.elpa/
+/.elpa.test/
