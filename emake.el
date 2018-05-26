@@ -169,7 +169,7 @@ ARCHIVES is a list of archives like `package-archives'."
                                       package-user-dir
                                       (car archive))))
         (if (file-exists-p archive-contents)
-            (emake--message "Already downloaded `%s' to ./%s"
+            (emake--message "Already downloaded `%s' to %s"
                             (car archive)
                             (file-relative-name archive-contents))
           (push archive empty-archives))))
@@ -310,7 +310,7 @@ PACKAGE_ARCHIVES is a list of archives to use; see
   (setq test-runner (or test-runner "ert"))
   (when-let ((test-dependencies (emake--clean-list "PACKAGE_TEST_DEPS")))
     (emake-with-elpa-test
-     (emake-task (format "installing test suite dependencies into ./%s"
+     (emake-task (format "installing test suite dependencies into %s"
                          (file-relative-name package-user-dir))
        (emake--install (mapcar #'intern test-dependencies)))))
   (let ((entry (assoc-string test-runner emake-test-runner-master-alist)))
