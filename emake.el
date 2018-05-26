@@ -305,21 +305,21 @@ runs the tests."
   (unless (functionp test-runner)
     (error "Test-runner not defined!"))
 
-  (let ((default-directory emake-project-root)
-        (tests-file (emake--getenv "PACKAGE_TESTS")))
-    (emake--message "Current directory: %s" default-directory)
-    (emake-with-elpa
-     (add-to-list 'load-path emake-project-root)
-     (when (file-readable-p tests-file)
+  (when-let ((tests-file (emake--getenv "PACKAGE_TESTS")))
+    (unless (file-readable-p tests-file)
+      (error "Cannot read file: %S" test-file))
+    (let ((default-directory emake-project-root))
+      (emake--message "Current directory: %s" default-directory)
+      (emake-with-elpa
+       (add-to-list 'load-path emake-project-root)
        (emake-task (format "loading test definitions in %s" tests-file)
          ;; add the package being tested to `load-path' so it can be required
          (add-to-list 'load-path (file-name-directory tests-file))
 
          ;; load the file with tests
-         (load tests-file)))
-
-     ;; run the tests and exit with an appropriate status
-     (funcall test-runner))))
+         (load tests-file)))))
+  ;; run the tests and exit with an appropriate status
+  (funcall test-runner))
 
 (defun emake--test-helper-checkdoc ()
   "Helper function for `checkdoc' test backend.
