@@ -105,6 +105,13 @@ ENV is expected to be a space-separated string."
         (package-buffer-info))))
   "Package description corresponding to the code in PACKAGE_FILE.")
 
+(defvar emake-package-reqs
+  (delq nil (mapcar (lambda (x)
+                      (unless (eq (car x) 'emacs)
+                        x))
+                    (package-desc-reqs emake-package-desc)))
+  "Non-emacs dependencies of PACKAGE_FILE.")
+
 (defvar emake-project-root
   (when-let ((package-file (emake--getenv "PACKAGE_FILE")))
     (when (file-readable-p package-file)
@@ -229,13 +236,14 @@ TRUE-VALUE during execution of BODY."
   "Install dependencies.
 Required packages include those that `PACKAGE_FILE' lists as
 dependencies."
-  (emake-with-elpa
-   (emake-task (format "installing in ./%s" (file-relative-name package-user-dir))
-     ;; install dependencies
-     (emake--install
-      (thread-last (package-desc-reqs emake-package-desc)
-        (mapcar #'car)
-        (delq 'emacs))))))
+  (if emake-package-reqs
+      (emake-with-elpa
+       (emake-task (format "installing in %s" (file-relative-name package-user-dir))
+         ;; install dependencies
+         (emake--install
+          (thread-last emake-package-reqs
+            (mapcar #'car)))))
+    (emake--message "No dependencies detected")))
 
 (defun emake-compile (&rest options)
   "Compile all files in PACKAGE_LISP.
