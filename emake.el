@@ -67,7 +67,7 @@ list of arguments for that format string."
   (apply #'message (concat "emake: " format) args))
 
 (defmacro emake-task (description &rest body)
-  "Run BODY wrapped by DESCRIPTION messages."
+  "Wrapped by DESCRIPTION messages, run BODY."
   (declare (indent 1) (debug t))
   (let ((Sdescription (cl-gensym)))
     `(let ((,Sdescription (concat ,description "...")))
@@ -282,10 +282,22 @@ defined tests and exit Emacs with code 0 if and only if all tests
 pass.")
 
 (defun emake-test (&optional test-runner)
-  "Run every test in PACKAGE_TESTS.
+  "Prepare for and call TEST-RUNNER.
 Optional argument TEST-RUNNER is a test-runner name in
 `emake-test-runner-master-alist' or the name of a function that
-runs the tests."
+runs the tests.  The default value is \"ert\" which runs
+`ert-run-tests-batch-and-exit'.
+
+Controlled by environment variables:
+
+PACKAGE_TESTS is a file to `load' before running TEST-RUNNER.
+
+PACKAGE_TEST_DEPS is a list of packages to use as dependencies of
+the test suite (not necessarily dependencies of the package being
+tested).
+
+PACKAGE_ARCHIVES is a list of archives to use; see
+`emake-package-archive-master-alist'."
   (setq test-runner (or test-runner "ert"))
   (when-let ((test-dependencies (emake--clean-list "PACKAGE_TEST_DEPS")))
     (emake-with-elpa-test
