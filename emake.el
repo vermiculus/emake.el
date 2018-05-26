@@ -178,7 +178,8 @@ ARCHIVES is a list of archives like `package-archives'."
   (emake--package-download-archives package-archives)
   (dolist (package packages)
     (unless (package-installed-p package)
-      (package-install package))))
+      (emake-task (format "installing %S" package)
+        (package-install package)))))
 
 ;;; Running targets
 
