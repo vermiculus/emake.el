@@ -211,7 +211,7 @@ TRUE-VALUE during execution of BODY."
       (let ((opt (car option))
             (var (cadr option))
             (val (or (= 2 (length option)) ; if there is no default value, use t
-                     (caddr option))))
+                     (nth 2 option))))
         (unless (stringp opt)
           (error "Option must be a string literal: %S" opt))
         (unless (symbolp var)
@@ -319,7 +319,7 @@ PACKAGE_ARCHIVES is a list of archives to use; see
 
   (when-let ((tests-file (emake--getenv "PACKAGE_TESTS")))
     (unless (file-readable-p tests-file)
-      (error "Cannot read file: %S" test-file))
+      (error "Cannot read file: %S" tests-file))
     (let ((default-directory emake-project-root))
       (emake--message "Current directory: %s" default-directory)
       (emake-with-elpa
