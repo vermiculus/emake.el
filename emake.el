@@ -71,8 +71,8 @@ list of arguments for that format string."
   (declare (indent 1) (debug t))
   (let ((Sdescription (cl-gensym)))
     `(let ((,Sdescription (concat ,description "...")))
-       (prog2
-           (emake--message ,Sdescription)
+       (emake--message ,Sdescription)
+       (unwind-protect
            (progn ,@body)
          (emake--message (concat ,Sdescription "done"))))))
 
@@ -319,7 +319,8 @@ runs the tests."
          ;; load the file with tests
          (load tests-file)))))
   ;; run the tests and exit with an appropriate status
-  (funcall test-runner))
+  (emake-task "running test"
+    (funcall test-runner)))
 
 (defun emake--test-helper-checkdoc ()
   "Helper function for `checkdoc' test backend.
