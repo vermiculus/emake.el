@@ -79,6 +79,9 @@ functionality.
 Invoking =$(EMAKE) install= parses =PACKAGE_FILE= to install all its noted
 dependencies (in the =Package-Requires= header) from =PACKAGE_ARCHIVES=.
 
+You can instruct EMake to ignore calculated dependencies using
+=PACKAGE_IGNORE_DEPS=.
+
 *** =compile=
 Invoking =$(EMAKE) compile= byte-compiles all files in =PACKAGE_LISP=.
 You can provide the optional argument =~error-on-warn= to instruct the

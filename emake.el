@@ -246,7 +246,14 @@ dependencies."
          ;; install dependencies
          (emake--install
           (thread-last emake-package-reqs
-            (mapcar #'car)))))
+            (mapcar #'car)
+            (mapcar (lambda (p)
+                      (unless (thread-last "PACKAGE_IGNORE_DEPS"
+                                (emake--clean-list)
+                                (mapcar #'intern )
+                                (memq p))
+                        p)))
+            (delq nil)))))
     (emake--message "No dependencies detected")))
 
 (defun emake-compile (&rest options)
