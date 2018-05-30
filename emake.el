@@ -56,6 +56,9 @@
 
 (setq debug-on-error (and (getenv "EMACS_MAKE_DEBUG_MODE") t))
 
+(when debug-on-error
+  (message "EMake is running in debug mode!"))
+
 (require 'package)
 (require 'subr-x)
 (require 'cl-lib)
