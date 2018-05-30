@@ -345,7 +345,7 @@ PACKAGE_ARCHIVES is a list of archives to use; see
          (load tests-file))
 
        ;; run the tests and exit with an appropriate status
-       (emake-task "running test"
+       (emake-task (format "running test `%S'" test-runner)
          (funcall test-runner))))))
 
 (defun emake--test-helper-checkdoc ()
