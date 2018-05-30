@@ -109,10 +109,11 @@ ENV is expected to be a space-separated string."
   "Package description corresponding to the code in PACKAGE_FILE.")
 
 (defvar emake-package-reqs
-  (delq nil (mapcar (lambda (x)
-                      (unless (eq (car x) 'emacs)
-                        x))
-                    (package-desc-reqs emake-package-desc)))
+  (when emake-package-desc
+    (delq nil (mapcar (lambda (x)
+                        (unless (eq (car x) 'emacs)
+                          x))
+                      (package-desc-reqs emake-package-desc))))
   "Non-emacs dependencies of PACKAGE_FILE.")
 
 (defvar emake-project-root
