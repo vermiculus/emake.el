@@ -54,7 +54,7 @@
 
 ;;; Code:
 
-(setq debug-on-error (string= "1" (getenv "EMACS_MAKE_DEBUG_MODE")))
+(setq debug-on-error (and (getenv "EMACS_MAKE_DEBUG_MODE") t))
 
 (require 'package)
 (require 'subr-x)
