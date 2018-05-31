@@ -12,6 +12,31 @@ Things EMake will never do (or 'reasons you may still need Cask'):
 - provide '[[https://bundler.io][bundler]]-like' =exec= abilities (this includes Cask's =emacs=
   and =eval= commands)
 
+* Why use EMake?
+EMake maintains a tight focus on continuous testing -- there's nothing
+included in the base script deemed unnecessary for this purpose.  This
+focus removes complexity that can cause false failures in your testing
+(such as interactions with CI images, Python incompatibilities, etc.).
+This reduction of complexity naturally leads to a *more stable build*.
+
+Free of dependencies, EMake is faster to install.  In my own projects,
+switching from Cask to EMake reduced build time by 90 seconds.  While
+we surely shouldn't be /too/ concerned about some faceless VM's time, we
+should be *good stewards* of the resources freely provided to us.
+
+Because it relies only on existing tools, EMake is more pliable than
+Cask (at least, more obviously so).  Want to use an environment
+variable to test MELPA-Stable separate from MELPA in your testing
+matrix?  Use Make's =ifeq= function.  Want to use an external testing
+framework?  Throw it in ~emake-test-runner-master-alist~ with some
+Elisp.
+
+#+BEGIN_QUOTE
+Anything you want to -- do it.
+Want to change the world?
+*There's nothing to it.*
+#+END_QUOTE
+
 * Using EMake
 A practical demonstration is available in the =example= submodule which
 is also [[https://github.com/vermiculus/emake.el-example][hosted on GitHub]] and [[https://travis-ci.org/vermiculus/emake.el-example][hooked up to Travis]].
