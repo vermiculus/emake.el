@@ -18,7 +18,7 @@ env:
   - EMACS_VERSION=26.1
   - EMACS_VERSION=snapshot
 before_install:
-- make setup
+- make emacs
 install:
 - make install
 script:
