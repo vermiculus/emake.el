@@ -27,9 +27,10 @@ should be *good stewards* of the resources freely provided to us.
 Because it relies only on existing tools, EMake is more pliable than
 Cask (at least, more obviously so).  Want to use an environment
 variable to test MELPA-Stable separate from MELPA in your testing
-matrix?  Use Make's =ifeq= function.  Want to use an external testing
-framework?  Throw it in ~emake-test-runner-master-alist~ with some
-Elisp.
+matrix?  Just configure an environment variable in the matrix itself
+(or use any of Make's facilities for more complicated logic).  Want to
+use an external testing framework?  Throw it in
+~emake-test-runner-master-alist~ with some Elisp.
 
 #+BEGIN_QUOTE
 Anything you want to -- do it.
