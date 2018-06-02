@@ -6,6 +6,12 @@ EENVS += PACKAGE_TEST_ARCHIVES="melpa"
 EMAKE := $(EENVS) emacs -batch -l emake.el --eval "(emake (pop argv))"
 
 .PHONY: clean setup install compile test
+.DEFAULT_GOAL: help
+
+help:				## show help
+	@grep -E '(^[A-Za-z_/\.\-]+:.*?##.*$$)|(^##.*$$)' $(MAKEFILE_LIST) \
+		| awk 'BEGIN {FS = ":.*?## "}{printf "\033[32m%-30s\033[0m %s\n", $$1, $$2}' \
+		| sed -e 's/\[32m##/[33m/'
 
 emacs-travis.mk:		## emacs install script
 	wget 'https://raw.githubusercontent.com/flycheck/emacs-travis/master/emacs-travis.mk'
