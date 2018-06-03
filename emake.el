@@ -348,9 +348,6 @@ PACKAGE_ARCHIVES is a list of archives to use; see
          (emake-task (format "loading test definitions in %s" test-file)
            (unless (file-readable-p test-file)
              (error "Cannot read file: %S" test-file))
-           ;; add the package being tested to `load-path' so it can be required
-           (add-to-list 'load-path (file-name-directory test-file))
-
            ;; load the file with tests
            (load test-file)))
 
