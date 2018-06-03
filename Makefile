@@ -10,8 +10,7 @@ EMAKE := $(EENVS) emacs -batch -l emake.el --eval "(emake (pop argv))"
 
 help:				## show help
 	@grep -E '(^[A-Za-z_/\.\-]+:.*?##.*$$)|(^##.*$$)' $(MAKEFILE_LIST) \
-		| awk 'BEGIN {FS = ":.*?## "}{printf "\033[32m%-30s\033[0m %s\n", $$1, $$2}' \
-		| sed -e 's/\[32m##/[33m/'
+		| awk 'BEGIN {FS = ":.*?## "}{printf "\033[32m%-30s\033[0m %s\n", $$1, $$2}'
 
 emacs-travis.mk:		## emacs install script
 	wget 'https://raw.githubusercontent.com/flycheck/emacs-travis/master/emacs-travis.mk'
