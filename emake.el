@@ -32,7 +32,8 @@
 ;; appropriately:
 ;;
 ;;     PACKAGE_FILE     := the root file of your package
-;;     PACKAGE_TESTS    := the root file to load your tests
+;;     PACKAGE_TESTS    := space-delimited list of Lisp files to load
+;;                         to define your tests
 ;;     PACKAGE_LISP     := space-delimited list of Lisp files in this
 ;;                         package
 ;;     PACKAGE_ARCHIVES := space-delimited list of named ELPA archives;
@@ -310,7 +311,8 @@ runs the tests.  The default value is \"ert\" which runs
 
 Controlled by environment variables:
 
-PACKAGE_TESTS is a file to `load' before running TEST-RUNNER.
+PACKAGE_TESTS is a list of files to `load' before running
+TEST-RUNNER.
 
 PACKAGE_TEST_DEPS is a list of packages to use as dependencies of
 the test suite (not necessarily dependencies of the package being
@@ -337,19 +339,20 @@ PACKAGE_ARCHIVES is a list of archives to use; see
   (unless (functionp test-runner)
     (error "Test-runner not defined!"))
 
-  (when-let ((tests-file (emake--getenv "PACKAGE_TESTS")))
+  (when-let ((test-files (emake--clean-list "PACKAGE_TESTS")))
     (let ((default-directory emake-project-root))
       (emake--message "Current directory: %s" default-directory)
       (emake-with-elpa
        (add-to-list 'load-path emake-project-root)
-       (emake-task (format "loading test definitions in %s" tests-file)
-         (unless (file-readable-p tests-file)
-           (error "Cannot read file: %S" tests-file))
-         ;; add the package being tested to `load-path' so it can be required
-         (add-to-list 'load-path (file-name-directory tests-file))
+       (dolist (test-file test-files)
+         (emake-task (format "loading test definitions in %s" test-file)
+           (unless (file-readable-p test-file)
+             (error "Cannot read file: %S" test-file))
+           ;; add the package being tested to `load-path' so it can be required
+           (add-to-list 'load-path (file-name-directory test-file))
 
-         ;; load the file with tests
-         (load tests-file))
+           ;; load the file with tests
+           (load test-file)))
 
        ;; run the tests and exit with an appropriate status
        (emake-task (format "running test `%S'" test-runner)

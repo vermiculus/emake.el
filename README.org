@@ -46,8 +46,9 @@ EMake itself is driven by a few environment variables:
 - =PACKAGE_FILE= :: This is the Elisp file that contains the definition
                     of your package (e.g., =Author=, =Package-Version=,
                     =Keywords=, etc.)
-- =PACKAGE_TESTS= :: This is the Elisp file that is loaded before
-     running tests.
+- =PACKAGE_TESTS= :: This contains a space-delimited list of Elisp files
+     to load before running tests.  The files are loaded in the order
+     they're provided.
 - =PACKAGE_LISP= :: This contains a space-delimited list of files to be
                     considered part of the package.
 - =PACKAGE_ARCHIVES= :: This contains a space-delimited list of
@@ -92,8 +93,8 @@ bindings or non-namespaced variables).
 *** =test=
 Invoking =$(EMAKE) test= kicks off the automated tests for your project.
 If you're using a framework that can't discover test definitions for
-you, you can define =PACKAGE_TESTS= to be the file to load those
-definitions from before running the tests.
+you, you can define =PACKAGE_TESTS= to be the file (or files) to load
+those definitions from before running the tests.
 
 You can specify which framework to use with an additional argument:
 =$(EMAKE) test ert= tests with ERT (the default) and =$(EMAKE) test
