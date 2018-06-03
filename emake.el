@@ -338,13 +338,13 @@ PACKAGE_ARCHIVES is a list of archives to use; see
     (error "Test-runner not defined!"))
 
   (when-let ((tests-file (emake--getenv "PACKAGE_TESTS")))
-    (unless (file-readable-p tests-file)
-      (error "Cannot read file: %S" tests-file))
     (let ((default-directory emake-project-root))
       (emake--message "Current directory: %s" default-directory)
       (emake-with-elpa
        (add-to-list 'load-path emake-project-root)
        (emake-task (format "loading test definitions in %s" tests-file)
+         (unless (file-readable-p tests-file)
+           (error "Cannot read file: %S" tests-file))
          ;; add the package being tested to `load-path' so it can be required
          (add-to-list 'load-path (file-name-directory tests-file))
 
