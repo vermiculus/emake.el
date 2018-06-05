@@ -68,7 +68,10 @@
   "Print a message to standard out.
 Argument FORMAT is a format string.  Optional argument ARGS is a
 list of arguments for that format string."
-  (apply #'message (concat "emake: " format) args))
+  (princ
+   (apply #'format
+          (concat "\033[0;37memake:\033[0m " format "\n")
+          args)))
 
 (defmacro emake-task (description &rest body)
   "Wrapped by DESCRIPTION messages, run BODY."
