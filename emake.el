@@ -77,7 +77,10 @@ list of arguments for that format string."
   "Wrapped by DESCRIPTION messages, run BODY."
   (declare (indent 1) (debug t))
   (let ((Sdescription (cl-gensym)))
-    `(let ((,Sdescription (concat ,description "...")))
+    `(let ((,Sdescription (concat ,description "..."))
+           (kill-emacs-hook kill-emacs-hook)) ; close this variable
+       (push (lambda () (emake--message (concat ,Sdescription "done (emacs killed)")))
+             kill-emacs-hook)
        (emake--message ,Sdescription)
        (unwind-protect
            (progn ,@body)
