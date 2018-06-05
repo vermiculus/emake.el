@@ -1,4 +1,4 @@
-#+Title: Emacs-Make
+#+Title: Emacs-Make [[https://travis-ci.org/vermiculus/emake.el][https://travis-ci.org/vermiculus/emake.el.svg?branch=master]]
 
 Test Elisp with services like Travis CI without the fuss of Cask --
 just you, your project, and (Emacs-)Make.
