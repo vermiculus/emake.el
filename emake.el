@@ -379,6 +379,7 @@ created by `checkdoc-file' is non-empty."
         (unless (= 0 (buffer-size))
           (error "Checkdoc issues detected"))))))
 
+(declare-function package-lint-batch-and-exit "ext:package-lint.el")
 (defun emake--test-helper-package-lint ()
   "Helper function for `package-lint' test backend."
   (require 'package-lint)
