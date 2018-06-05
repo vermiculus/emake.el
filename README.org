@@ -85,6 +85,8 @@ a one-file package by the name =coffee-table.el= would use
 use of a =coffee-table-pkg.el= file) can be configured using the
 standard variables above.
 
+See this project's own =Makefile= for an example.
+
 ** Default Targets
 EMake comes with a few default targets to give it some out-of-the-box
 functionality.
