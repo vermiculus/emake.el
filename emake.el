@@ -308,12 +308,14 @@ when evaluated, produces a defined function that will run all
 defined tests and exit Emacs with code 0 if and only if all tests
 pass.")
 
-(defun emake-test (&optional test-runner)
+(defun emake-test (test-runner &rest args)
   "Prepare for and call TEST-RUNNER.
-Optional argument TEST-RUNNER is a test-runner name in
+Argument TEST-RUNNER is a test-runner name in
 `emake-test-runner-master-alist' or the name of a function that
-runs the tests.  The default value is \"ert\" which runs
-`ert-run-tests-batch-and-exit'.
+runs the tests.
+
+ARGS is bound to `command-line-args-left' while running
+TEST-RUNNER.
 
 Controlled by environment variables:
 
@@ -326,7 +328,6 @@ tested).
 
 PACKAGE_ARCHIVES is a list of archives to use; see
 `emake-package-archive-master-alist'."
-  (setq test-runner (or test-runner "ert"))
   (when-let ((test-dependencies (emake--clean-list "PACKAGE_TEST_DEPS")))
     (emake-with-elpa-test
      (emake-task (format "installing test suite dependencies into %s"
@@ -358,7 +359,8 @@ PACKAGE_ARCHIVES is a list of archives to use; see
 
    ;; run the tests and exit with an appropriate status
    (emake-task (format "running test `%S'" test-runner)
-     (funcall test-runner))))
+     (let ((command-line-args-left args))
+       (funcall test-runner)))))
 
 (defun emake--test-helper-checkdoc ()
   "Helper function for `checkdoc' test backend.
