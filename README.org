@@ -73,6 +73,18 @@ want to set ~byte-compile-error-on-warn~, for example, or maybe define
 new testing frameworks by extending ~emake-test-runner-master-alist~.
 It's just Elisp -- no funny business!
 
+** EMake.mk
+Since most package development is pretty similar across projects,
+EMake includes in its distribution a file called =emake.mk=.  By
+downloading this file instead, you get instant access to the available
+targets (=setup, =compile=, and =test=) and support for both the ERT and
+Buttercup testing frameworks as well as =checkdoc= and =package-lint=.
+All you have to do is set the =PACKAGE_BASENAME= variable.  For example,
+a one-file package by the name =coffee-table.el= would use
+=PACKAGE_BASENAME=coffee-table=.  More complex environment setup (e.g.,
+use of a =coffee-table-pkg.el= file) can be configured using the
+standard variables above.
+
 ** Default Targets
 EMake comes with a few default targets to give it some out-of-the-box
 functionality.
