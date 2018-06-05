@@ -367,9 +367,12 @@ limitation by throwing an error if the `*Warnings*' buffer
 created by `checkdoc-file' is non-empty."
   (require 'checkdoc)
   (let ((guess-checkdoc-error-buffer-name "*Warnings*"))
+    ;; This buffer name is hard-coded in checkdoc and it may change
     (ignore-errors
       (kill-buffer guess-checkdoc-error-buffer-name))
-    (mapc #'checkdoc-file
+    (mapc (lambda (f)
+            (emake-task (format "checking %s" f)
+              (checkdoc-file f)))
           (emake--clean-list "PACKAGE_LISP"))
     (when-let ((buf (get-buffer guess-checkdoc-error-buffer-name)))
       (with-current-buffer buf
