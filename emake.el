@@ -342,21 +342,20 @@ PACKAGE_ARCHIVES is a list of archives to use; see
   (unless (functionp test-runner)
     (error "Test-runner not defined!"))
 
-  (when-let ((test-files (emake--clean-list "PACKAGE_TESTS")))
-    (let ((default-directory emake-project-root))
-      (emake--message "Current directory: %s" default-directory)
-      (emake-with-elpa
-       (add-to-list 'load-path emake-project-root)
-       (dolist (test-file test-files)
-         (emake-task (format "loading test definitions in %s" test-file)
-           (unless (file-readable-p test-file)
-             (error "Cannot read file: %S" test-file))
-           ;; load the file with tests
-           (load test-file)))
+  (emake-with-elpa
+   ;; Load any test definitions
+   (when-let ((test-files (emake--clean-list "PACKAGE_TESTS")))
+     (add-to-list 'load-path emake-project-root)
+     (dolist (test-file test-files)
+       (emake-task (format "loading test definitions in %s" test-file)
+         (unless (file-readable-p test-file)
+           (error "Cannot read file: %S" test-file))
+         ;; load the file with tests
+         (load test-file))))
 
-       ;; run the tests and exit with an appropriate status
-       (emake-task (format "running test `%S'" test-runner)
-         (funcall test-runner))))))
+   ;; run the tests and exit with an appropriate status
+   (emake-task (format "running test `%S'" test-runner)
+     (funcall test-runner))))
 
 (defun emake--test-helper-checkdoc ()
   "Helper function for `checkdoc' test backend.
