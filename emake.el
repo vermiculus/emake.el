@@ -297,11 +297,7 @@ Several OPTIONS are available:
     ("ert"          . (progn (require 'ert)
                              'ert-run-tests-batch-and-exit))
 
-    ("package-lint" . (progn (require 'package-lint)
-                             ;; Dispatch function uses this variable; fake it
-                             (setq command-line-args-left
-                                   (emake--clean-list "PACKAGE_LISP"))
-                             'package-lint-batch-and-exit)))
+    ("package-lint" . 'emake--test-helper-package-lint))
   "Test-runner definition alist.
 Key is the string name of the test-runner.  Value is a form that,
 when evaluated, produces a defined function that will run all
@@ -379,6 +375,12 @@ created by `checkdoc-file' is non-empty."
       (with-current-buffer buf
         (unless (= 0 (buffer-size))
           (error "Checkdoc issues detected"))))))
+
+(defun emake--test-helper-package-lint ()
+  "Helper function for `package-lint' test backend."
+  (require 'package-lint)
+  (let ((command-line-args-left (emake--clean-list "PACKAGE_LISP")))
+    (package-lint-batch-and-exit)))
 
 (provide 'emake)
 ;;; emake.el ends here
