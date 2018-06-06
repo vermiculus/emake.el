@@ -56,7 +56,7 @@ clean::                         ## clean all generated files
 setup: emacs emake.el
 
 compile: .elpa                  ## compile the project
-	rm -f *.elc
+	rm -f $(PACKAGE_LISP:.el=.elc)
 	$(EMAKE) compile ~error-on-warn
 
 ## Running specific tests
