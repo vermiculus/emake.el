@@ -33,9 +33,11 @@ CURL ?= curl --fail --silent --show-error --insecure --location --retry 9 --retr
 .PHONY: clean setup install compile test help
 
 help:                           ## show help
-	@grep -hE '(^[A-Za-z_/\.\-]+:.*?##.*$$)|(^##.*$$)' $(MAKEFILE_LIST) \
+	@grep -hE '(^[A-Za-z_/%\.\-]+:.*?##.*$$)|(^##.*$$)' $(MAKEFILE_LIST) \
 		| awk 'BEGIN {FS = ":.*?## "}{printf "\033[32m%-30s\033[0m %s\n", $$1, $$2}' \
 		| sed -e 's/\[32m## */[33m/'
+help-%:                         ## show help for EMake target '%'
+	$(EMAKE) help $*
 
 
 # Tell Make how to 'clean' this project; use double-colon to allow additions downstream

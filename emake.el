@@ -201,15 +201,20 @@ ARCHIVES is a list of archives like `package-archives'."
 
 ;;; Running targets
 
+(defun emake--resolve-target (target)
+  "Resolve TARGET to a function."
+  (let ((fn (intern (concat "emake-my-" target))))
+    (unless (fboundp fn)
+      (setq fn (intern (concat "emake-" target))))
+    (unless (fboundp fn)
+      (error "%S target not found" target))
+    fn))
+
 (defun emake (target)
   "Search for a function matching TARGET and execute it.
 
 The executed function is emake-my-TARGET if bound, else emake-TARGET."
-  (let ((fun (intern (format "emake-my-%s" target))))
-    (unless (fboundp fun)
-      (setq fun (intern (format "emake-%s" target))))
-    (unless (fboundp fun)
-      (error "%S target not found" target))
+  (let ((fun (emake--resolve-target target)))
     (emake--message (if command-line-args-left
                         "Running target %S with function `%S' with arguments %S"
                       "Running target %S with function `%S'")
@@ -285,6 +290,14 @@ Several OPTIONS are available:
                (goto-char (point-min))
                (when (re-search-forward "^.*:\\(Error\\|Warning\\): .*$" nil t)
                  (error "There were compile-time errors"))))))))))
+
+(defun emake-help (target)
+  "Get help for TARGET.
+Uses the documentation string to get help for an EMake target."
+  (let ((fn (emake--resolve-target target)))
+    (emake-task (format "Documentation of %s (function %S)" target fn)
+      (princ (documentation fn))
+      (princ "\n"))))
 
 ;;; Running tests
 
