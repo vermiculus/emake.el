@@ -394,14 +394,13 @@ just `error' out).  This function hopes to hack around this
 limitation by throwing an error if the `*Warnings*' buffer
 created by `checkdoc-file' is non-empty."
   (require 'checkdoc)
-  (let ((guess-checkdoc-error-buffer-name "*Warnings*"))
+  (let ((guess-checkdoc-error-buffer-name "*Warnings*")
+        (files (emake--clean-list "PACKAGE_LISP")))
     ;; This buffer name is hard-coded in checkdoc and it may change
     (ignore-errors
       (kill-buffer guess-checkdoc-error-buffer-name))
-    (mapc (lambda (f)
-            (emake-task (format "checking %s" f)
-              (checkdoc-file f)))
-          (emake--clean-list "PACKAGE_LISP"))
+    (emake-task (format "checking %s" files)
+      (mapc #'checkdoc-file files))
     (when-let ((buf (get-buffer guess-checkdoc-error-buffer-name)))
       (with-current-buffer buf
         (unless (= 0 (buffer-size))
@@ -412,7 +411,8 @@ created by `checkdoc-file' is non-empty."
   "Helper function for `package-lint' test backend."
   (require 'package-lint)
   (let ((command-line-args-left (emake--clean-list "PACKAGE_LISP")))
-    (package-lint-batch-and-exit)))
+    (emake-task (format "checking %s" command-line-args-left)
+      (package-lint-batch-and-exit))))
 
 (provide 'emake)
 ;;; emake.el ends here
