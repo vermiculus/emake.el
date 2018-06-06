@@ -30,7 +30,7 @@ CURL ?= curl --fail --silent --show-error --insecure --location --retry 9 --retr
 
 # Set up our phony targets so Make doesn't think there are files by
 # these names.
-.PHONY: clean setup install compile test help
+.PHONY: clean setup install compile test help emacs install-emacs
 
 help:                           ## show help
 	@grep -hE '(^[A-Za-z_/%\.\-]+:.*?##.*$$)|(^##.*$$)' $(MAKEFILE_LIST) \
@@ -88,15 +88,16 @@ emacs-travis.mk:                ## download the emacs-travis.mk Makefile
 .elpa: emake.el                ## install dependencies as determined by EMake
 	$(EMAKE) install
 
-# The following lets you run this Makefile locally without installing
-# Emacs over and over again.  On Travis (and other CI services), the
-# $CI environment variable is available as "true"; take advantage of
-# this to provide two different implementations of the `emacs' target.
-ifeq ($(CI),true)
-emacs: emacs-travis.mk          ## if CI=true, install Emacs
+# no emacs or not the right version?  install the right emacs.
+ifneq (ok,$(shell emacs -batch -l emake.el -f emake-verify-version 2>&1))
+# outputs 'ok' if the major.minor of `emacs-version' is EMACS_VERSION.
+# Note if emacs is not in PATH, then we still won't output "ok" (and
+# Make won't freak out from the exit code).
+emacs: install-emacs
+endif
+emacs:                          ## report emacs version (installing $EMACS_VERSION if necessary)
+	emacs --version
+
+install-emacs: emacs-travis.mk	## build and install a fresh emacs
 	export PATH="$(HOME)/bin:$(PATH)"
 	make -f emacs-travis.mk install_emacs
-else
-emacs:                          ## otherwise, just report the version of Emacs
-	which emacs && emacs --version
-endif
