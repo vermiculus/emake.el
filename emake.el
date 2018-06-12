@@ -48,17 +48,12 @@
 ;;     PACKAGE_TEST_ARCHIVES := like PACKAGE_ARCHIVES, but used for
 ;;                              installing PACKAGE_TEST_DEPS.
 ;;
-;; To debug Emacs-Make, set the environment variable EMACS_MAKE_DEBUG_MODE.
+;; To debug Emacs-Make, set the environment variable EMAKE_DEBUG_FLAGS.
 ;;
 ;; See the file README.org in this directory for more information and
 ;; minimal examples.
 
 ;;; Code:
-
-(setq debug-on-error (and (getenv "EMACS_MAKE_DEBUG_MODE") t))
-
-(when debug-on-error
-  (message "EMake is running in debug mode!"))
 
 (require 'package)
 (require 'subr-x)
@@ -74,6 +69,7 @@ See also `emake-help'."
 
 (defvar emake-environment-variables
   '(("EMACS_VERSION" . "MAJOR.MINOR version of Emacs we intended to run under")
+    ("EMAKE_DEBUG_FLAGS" . "have EMake print debugging information; see source for details")
     ("PACKAGE_FILE" . "root file of your package")
     ("PACKAGE_TESTS" . "space-delimited list of Lisp files to load to define your tests")
     ("PACKAGE_LISP" . "space-delimited list of Lisp files in this package")
@@ -100,6 +96,15 @@ See also `emake-help'."
 ENV is expected to be a space-separated string."
   (when-let ((vals (emake--getenv env)))
     (split-string vals nil 'omit-nulls)))
+
+(defvar emake--debug-flags (emake--clean-list "EMAKE_DEBUG_FLAGS")
+  "Flags to control non-functional behavior of EMake.
+
+show-environment:
+  show relevant environment variables when running targets.
+
+debug:
+  set `debug-on-error' when running targets.")
 
 (defun emake-verify-version ()
   "Prints \"ok\" if the correct version of Emacs is being used.
@@ -252,11 +257,17 @@ ARCHIVES is a list of archives like `package-archives'."
   "Search for a function matching TARGET and execute it.
 
 The executed function is emake-my-TARGET if bound, else emake-TARGET."
-  (let ((fun (emake--resolve-target target)))
+  (let ((fun (emake--resolve-target target))
+        (debug-on-error (member "debug" emake--debug-flags)))
     (emake--message (if command-line-args-left
                         "Running target %S with function `%S' with arguments %S"
                       "Running target %S with function `%S'")
                     target fun command-line-args-left)
+    (when (member "show-environment" emake--debug-flags)
+      (emake--message (format "relevant environment: %s"
+                              (mapconcat (lambda (var) (format "%s=%S" var (emake--getenv var)))
+                                         (function-get fun 'emake-environment-variables)
+                                         " "))))
     (apply fun (prog1 command-line-args-left
                  (setq command-line-args-left nil)))))
 

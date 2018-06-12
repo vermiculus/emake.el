@@ -74,6 +74,9 @@ want to set ~byte-compile-error-on-warn~, for example, or maybe define
 new testing frameworks by extending ~emake-test-runner-master-alist~.
 It's just Elisp -- no funny business!
 
+To provide extra information, you can use =EMAKE_DEBUG_FLAGS=, which
+see.
+
 ** EMake.mk
 Since most package development is pretty similar across projects,
 EMake includes in its distribution a file called =emake.mk=.  By
