@@ -14,6 +14,8 @@ PACKAGE_TESTS           ?= $(wildcard test/*.el)
 PACKAGE_ARCHIVES        ?= gnu
 PACKAGE_TEST_ARCHIVES   ?= gnu
 
+EMACS ?= emacs
+
 # Then, make it easy to invoke Emacs with EMake loaded.
 EMAKE = PACKAGE_FILE="$(PACKAGE_FILE)" \
 	PACKAGE_LISP="$(PACKAGE_LISP)" \
@@ -21,7 +23,7 @@ EMAKE = PACKAGE_FILE="$(PACKAGE_FILE)" \
 	PACKAGE_ARCHIVES="$(PACKAGE_ARCHIVES)" \
 	PACKAGE_TEST_DEPS="$(PACKAGE_TEST_DEPS)" \
 	PACKAGE_TEST_ARCHIVES="$(PACKAGE_TEST_ARCHIVES)" \
-	emacs -batch -l emake.el \
+	$(EMACS) -batch -l emake.el \
 	--eval "(setq enable-dir-local-variables nil)" \
 	$(EMACS_ARGS) \
 	--eval "(emake (pop argv))"
@@ -89,14 +91,14 @@ emacs-travis.mk:                ## download the emacs-travis.mk Makefile
 	$(EMAKE) install
 
 # no emacs or not the right version?  install the right emacs.
-ifneq (ok,$(shell emacs -batch -l emake.el -f emake-verify-version 2>&1))
+ifneq (ok,$(shell $(EMACS) -batch -l emake.el -f emake-verify-version 2>&1))
 # outputs 'ok' if the major.minor of `emacs-version' is EMACS_VERSION.
 # Note if emacs is not in PATH, then we still won't output "ok" (and
 # Make won't freak out from the exit code).
 emacs: install-emacs
 endif
 emacs:                          ## report emacs version (installing $EMACS_VERSION if necessary)
-	emacs --version
+	$(EMACS) --version
 
 install-emacs: emacs-travis.mk	## build and install a fresh emacs
 	export PATH="$(HOME)/bin:$(PATH)"
