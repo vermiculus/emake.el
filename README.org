@@ -60,6 +60,7 @@ by configuring the following environment variables:
      package-names your test suite is dependent upon.
 - =PACKAGE_TEST_ARCHIVES= :: These archives will be used to install the
      dependencies in =PACKAGE_TEST_DEPS= (and their dependencies, ...).
+     If not specified, =PACKAGE_ARCHIVES= will be used for this as well.
 
 The entry point to EMake is the function ~emake~ and is intended to be
 invoked as follows:

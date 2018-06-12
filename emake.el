@@ -181,7 +181,11 @@ is the executable body of the macro."
 (defmacro emake-with-elpa-test (&rest body)
   "Run BODY after setting up ELPA context."
   (declare (debug t))
-  (emake--genform-with-elpa ".elpa.test" "PACKAGE_TEST_ARCHIVES" body))
+  `(progn
+     (unless (emake--getenv "PACKAGE_TEST_ARCHIVES")
+       (setcdr (assoc-string "PACKAGE_TEST_ARCHIVES" emake--env-cache)
+               (emake--getenv "PACKAGE_ARCHIVES")))
+     ,(emake--genform-with-elpa ".elpa.test" "PACKAGE_TEST_ARCHIVES" body)))
 
 (defun emake--package-download-archives (archives)
   "Download ARCHIVES if they do not exist locally.
