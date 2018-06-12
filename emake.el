@@ -64,6 +64,24 @@
 (require 'subr-x)
 (require 'cl-lib)
 
+(defun emake--declaration-environment-variables (fn _fn-args &rest environment-variables)
+  "Note that FN (i.e., a target) depends on ENVIRONMENT-VARIABLES.
+See also `emake-help'."
+  (function-put fn 'emake-environment-variables environment-variables)
+  nil)
+(push (list 'emake-environment-variables 'emake--declaration-environment-variables)
+      defun-declarations-alist)
+
+(defvar emake-environment-variables
+  '(("EMACS_VERSION" . "MAJOR.MINOR version of Emacs we intended to run under")
+    ("PACKAGE_FILE" . "root file of your package")
+    ("PACKAGE_TESTS" . "space-delimited list of Lisp files to load to define your tests")
+    ("PACKAGE_LISP" . "space-delimited list of Lisp files in this package")
+    ("PACKAGE_ARCHIVES" . "space-delimited list of named ELPA archives; see also `emake-package-archive-master-alist'")
+    ("PACKAGE_TEST_DEPS" . "space-delimited list of packages needed by the test suite")
+    ("PACKAGE_TEST_ARCHIVES" . "space-delimited list of named ELPA archives needed by the test suite; see also `emake-package-archive-master-alist'"))
+  "List of environment variables used by EMake targets.")
+
 ;;; Dealing with environment variables
 
 (defvar emake--env-cache nil
@@ -92,6 +110,7 @@ Note that if this is called in a batch run, output will go to
 stderr.
 
 Used in companion file `emake.mk'."
+  (declare (emake-environment-variables "EMACS_VERSION"))
   (let ((major-minor (and (string-match (rx (+ digit) ?. (+ digit))
                                         emacs-version)
                           (match-string 0 emacs-version))))
@@ -271,6 +290,10 @@ TRUE-VALUE during execution of BODY."
   "Install dependencies.
 Required packages include those that `PACKAGE_FILE' lists as
 dependencies."
+  (declare (emake-environment-variables
+            "PACKAGE_IGNORE_DEPS"
+            "PACKAGE_ARCHIVES"
+            "PACKAGE_FILE"))
   (if emake-package-reqs
       (emake-with-elpa
        (emake-task (format "installing in %s" (file-relative-name package-user-dir))
@@ -292,6 +315,7 @@ dependencies."
 Several OPTIONS are available:
 
 `~error-on-warn': set `byte-compile-error-on-warn'"
+  (declare (emake-environment-variables "PACKAGE_LISP"))
   (require 'bytecomp)
   (emake-with-options options
       (("error-on-warn" byte-compile-error-on-warn))
@@ -312,10 +336,15 @@ Several OPTIONS are available:
 
 (defun emake-help (target)
   "Get help for TARGET.
-Uses the documentation string to get help for an EMake target."
+Uses the documentation string to get help for an EMake target.
+If the target's behavior is driven by environment variables,
+those will be reported as well."
   (let ((fn (emake--resolve-target target)))
     (emake-task (format "Documentation of %s (function %S)" target fn)
       (princ (documentation fn))
+      (princ "\n\n----\n\nThis target uses the following environment variables:\n\n")
+      (dolist (var (function-get fn 'emake-environment-variables))
+        (princ (format "    %s: %s\n" var (cdr (assoc-string var emake-environment-variables)))))
       (princ "\n"))))
 
 ;;; Running tests
@@ -356,6 +385,11 @@ tested).
 
 PACKAGE_ARCHIVES is a list of archives to use; see
 `emake-package-archive-master-alist'."
+  (declare (emake-environment-variables
+            "PACKAGE_TEST_DEPS"
+            "PACKAGE_TEST_ARCHIVES"
+            "PACKAGE_TESTS"
+            "PACKAGE_ARCHIVES"))
   (when-let ((test-dependencies (emake--clean-list "PACKAGE_TEST_DEPS")))
     (emake-with-elpa-test
      (emake-task (format "installing test suite dependencies into %s"

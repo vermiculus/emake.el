@@ -116,6 +116,28 @@ You can specify which framework to use with an additional argument:
 buttercup= tests with Buttercup.  Other frameworks may be defined in or
 added to ~emake-test-runner-master-alist~.
 
+*** =help=
+Shows documentation for all Makefile targets.
+*** =help-*=
+Shows documentation for an Emake target.  For example,
+#+BEGIN_EXAMPLE
+make help-compile
+[...] emacs -batch -l emake.el [...] help compile
+emake: Running target "help" with function `emake-help' with arguments ("compile")
+emake: Documentation of compile (function emake-compile)...
+Compile all files in PACKAGE_LISP.
+Several OPTIONS are available:
+
+‘~error-on-warn’: set ‘byte-compile-error-on-warn’
+
+----
+
+This target uses the following environment variables:
+
+    PACKAGE_LISP: space-delimited list of Lisp files in this package
+
+emake: Documentation of compile (function emake-compile)...done
+#+END_EXAMPLE
 * Extending EMake
 Targets can be created (or overridden) by defining a function called
 =emake-my-TARGET= (where =TARGET= is the name of your custom target)
