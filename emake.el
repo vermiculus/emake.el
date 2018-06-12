@@ -64,6 +64,25 @@
 (require 'subr-x)
 (require 'cl-lib)
 
+;;; Dealing with environment variables
+
+(defvar emake--env-cache nil
+  "Alist mapping environment variables to their values.")
+
+(defun emake--getenv (variable)
+  "Get the value of VARIABLE in the current environment."
+  (if-let ((entry (assoc-string variable emake--env-cache)))
+      (cdr entry)
+    (let ((val (getenv variable)))
+      (push (cons variable val) emake--env-cache)
+      val)))
+
+(defun emake--clean-list (env)
+  "Return a list made from the environment variable ENV.
+ENV is expected to be a space-separated string."
+  (when-let ((vals (emake--getenv env)))
+    (split-string vals nil 'omit-nulls)))
+
 (defun emake-verify-version ()
   "Prints \"ok\" if the correct version of Emacs is being used.
 Compares the MAJOR.MINOR versions of variable `emacs-version' to
@@ -100,25 +119,6 @@ list of arguments for that format string."
        (unwind-protect
            (progn ,@body)
          (emake--message (concat ,Sdescription "done"))))))
-
-;;; Dealing with environment variables
-
-(defvar emake--env-cache nil
-  "Alist mapping environment variables to their values.")
-
-(defun emake--getenv (variable)
-  "Get the value of VARIABLE in the current environment."
-  (if-let ((entry (assoc-string variable emake--env-cache)))
-      (cdr entry)
-    (let ((val (getenv variable)))
-      (push (cons variable val) emake--env-cache)
-      val)))
-
-(defun emake--clean-list (env)
-  "Return a list made from the environment variable ENV.
-ENV is expected to be a space-separated string."
-  (when-let ((vals (emake--getenv env)))
-    (split-string vals nil 'omit-nulls)))
 
 ;;; Package metadata
 
