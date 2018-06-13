@@ -42,6 +42,19 @@ Want to change the world?
 A practical demonstration is available in the =example= submodule which
 is also [[https://github.com/vermiculus/emake.el-example][hosted on GitHub]] and [[https://travis-ci.org/vermiculus/emake.el-example][hooked up to Travis]].
 
+I recommend specifying the commit you want to use to prevent issues
+with builds broken by upstream changes.  If a certain version works
+for you, there is no added value to receiving further updates until
+you specifically want them.  /It may be dangerous to use =master=!/ While
+it should always be stable, it may introduce backwards-incompatible
+changes.
+
+For example:
+#+BEGIN_SRC makefile
+  EMAKE_SHA1=af25a9cd958d77d5126d62e8855a30097bea0d47
+  $(CURL) -O https://raw.githubusercontent.com/vermiculus/emake.el/$(EMAKE_SHA1)/emake.el
+#+END_SRC
+
 EMake itself is driven by a few environment variables:
 - =PACKAGE_FILE= :: This is the Elisp file that contains the definition
                     of your package (e.g., =Author=, =Package-Version=,

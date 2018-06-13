@@ -5,6 +5,10 @@ ifndef PACKAGE_BASENAME
 $(error PACKAGE_BASENAME is not set)
 endif
 
+ifndef EMAKE_SHA1
+$(error EMAKE_SHA1 is not set)
+endif
+
 # User options
 #   EMACS_ARGS: [extra arguments for each invocation of emacs]
 #   (below; see README)
@@ -82,7 +86,7 @@ test-ert: .elpa                 ## ERT
 ## Support targets
 
 emake.el:                       ## download the EMake script
-	$(CURL) -O 'https://raw.githubusercontent.com/vermiculus/emake.el/master/emake.el'
+	$(CURL) -O 'https://raw.githubusercontent.com/vermiculus/emake.el/$(EMAKE_SHA1)/emake.el'
 
 emacs-travis.mk:                ## download the emacs-travis.mk Makefile
 	$(CURL) -O 'https://raw.githubusercontent.com/flycheck/emacs-travis/master/emacs-travis.mk'
