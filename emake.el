@@ -64,8 +64,24 @@
 See also `emake-help'."
   (function-put fn 'emake-environment-variables environment-variables)
   nil)
-(push (list 'emake-environment-variables 'emake--declaration-environment-variables)
-      defun-declarations-alist)
+
+(defun emake--declaration-default-target (fn _fn-args target)
+  "Note that FN is TARGET.
+See also `emake--resolve-target'."
+  (function-put fn 'emake-default-target target)
+  nil)
+
+(defun emake--declaration-target (fn _fn-args target)
+  "Note that FN is a custom/override TARGET.
+See also `emake--resolve-target'."
+  (function-put fn 'emake-target target)
+  nil)
+
+;; activate (declare ...) properties
+(nconc defun-declarations-alist
+       '((emake-environment-variables emake--declaration-environment-variables)
+         (emake-default-target emake--declaration-default-target)
+         (emake-target emake--declaration-target)))
 
 (defvar emake-environment-variables
   '(("EMACS_VERSION" . "MAJOR.MINOR version of Emacs we intended to run under")
@@ -246,12 +262,18 @@ ARCHIVES is a list of archives like `package-archives'."
 
 (defun emake--resolve-target (target)
   "Resolve TARGET to a function."
-  (let ((fn (intern (concat "emake-my-" target))))
-    (unless (fboundp fn)
-      (setq fn (intern (concat "emake-" target))))
-    (unless (fboundp fn)
-      (error "%S target not found" target))
-    fn))
+  (let (candidates finder)
+    ;; make sure `candidates' gets closed onto the right thing
+    (setq finder (lambda (sym)
+                   (lambda (f)
+                     (when (string= target (function-get f sym))
+                       (push f candidates)))))
+    (mapatoms (funcall finder 'emake-target))
+    (unless candidates
+      (mapatoms (funcall finder 'emake-default-target)))
+    (if (= 1 (length candidates))
+        (car candidates)
+      (error "Target unresolved: %s => %S" target candidates))))
 
 (defun emake (target)
   "Search for a function matching TARGET and execute it.
@@ -304,7 +326,8 @@ dependencies."
   (declare (emake-environment-variables
             "PACKAGE_IGNORE_DEPS"
             "PACKAGE_ARCHIVES"
-            "PACKAGE_FILE"))
+            "PACKAGE_FILE")
+           (emake-default-target "install"))
   (if emake-package-reqs
       (emake-with-elpa
        (emake-task (format "installing in %s" (file-relative-name package-user-dir))
@@ -326,7 +349,8 @@ dependencies."
 Several OPTIONS are available:
 
 `~error-on-warn': set `byte-compile-error-on-warn'"
-  (declare (emake-environment-variables "PACKAGE_LISP"))
+  (declare (emake-environment-variables "PACKAGE_LISP")
+           (emake-default-target "compile"))
   (require 'bytecomp)
   (emake-with-options options
       (("error-on-warn" byte-compile-error-on-warn))
@@ -350,6 +374,7 @@ Several OPTIONS are available:
 Uses the documentation string to get help for an EMake target.
 If the target's behavior is driven by environment variables,
 those will be reported as well."
+  (declare (emake-default-target "help"))
   (let ((fn (emake--resolve-target target)))
     (emake-task (format "Documentation of %s (function %S)" target fn)
       (princ (documentation fn))
@@ -400,7 +425,8 @@ PACKAGE_ARCHIVES is a list of archives to use; see
             "PACKAGE_TEST_DEPS"
             "PACKAGE_TEST_ARCHIVES"
             "PACKAGE_TESTS"
-            "PACKAGE_ARCHIVES"))
+            "PACKAGE_ARCHIVES")
+           (emake-default-target "test"))
   (when-let ((test-dependencies (emake--clean-list "PACKAGE_TEST_DEPS")))
     (emake-with-elpa-test
      (emake-task (format "installing test suite dependencies into %s"

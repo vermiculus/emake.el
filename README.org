@@ -155,17 +155,23 @@ This target uses the following environment variables:
 emake: Documentation of compile (function emake-compile)...done
 #+END_EXAMPLE
 * Extending EMake
-Targets can be created (or overridden) by defining a function called
-=emake-my-TARGET= (where =TARGET= is the name of your custom target)
-before calling the ~emake~ function.
+Targets can be created (or overridden) by defining a function using
+the =emake-target= property in its =declare= form before calling the ~emake~
+function.
 
-For example, if =custom.el= contains a custom target called
-~emake-my-cake~ and you invoke EMake as:
-#+BEGIN_SRC sh
-  emacs -batch -l emake.el -l custom.el --eval "(emake (pop argv))"
+For example, if =custom.el= contains a custom target defined so:
+#+BEGIN_SRC elisp
+  (defun my-function ()
+    (declare (emake-target "my-cake"))
+    (message "Yum!"))
 #+END_SRC
-and run ~make cake~, your function ~emake-my-cake~ will be executed after
-some output boilerplate.
+and you invoke EMake as:
+#+BEGIN_SRC makefile
+  cake:
+          emacs -batch -l emake.el -l custom.el --eval "(emake (pop argv))" my-cake
+#+END_SRC
+and run =make cake=, ~my-function~ will be executed after some output
+boilerplate.  See ~emake--resolve-target~ for more details.
 
 You may find ~emake-with-elpa~, =emake-project-root=, and
 =emake-package-desc= helpful (along with the ~package-desc-~ family of
