@@ -91,6 +91,7 @@ See also `emake--resolve-target'."
     ("PACKAGE_LISP" . "space-delimited list of Lisp files in this package")
     ("PACKAGE_ARCHIVES" . "space-delimited list of named ELPA archives; see also `emake-package-archive-master-alist'")
     ("PACKAGE_TEST_DEPS" . "space-delimited list of packages needed by the test suite")
+    ("PACKAGE_IGNORE_DEPS" . "space-delimited list of dependencies to ignore when installing")
     ("PACKAGE_TEST_ARCHIVES" . "space-delimited list of named ELPA archives needed by the test suite; see also `emake-package-archive-master-alist'"))
   "List of environment variables used by EMake targets.")
 
@@ -335,8 +336,8 @@ Required packages include those that `PACKAGE_FILE' lists as
 dependencies."
   (declare (emake-environment-variables
             "PACKAGE_IGNORE_DEPS"
-            "PACKAGE_ARCHIVES"
-            "PACKAGE_FILE")
+            ("PACKAGE_ARCHIVES" . "used to install dependencies")
+            ("PACKAGE_FILE" . "parsed to determine dependencies"))
            (emake-default-target "install"))
   (if emake-package-reqs
       (emake-with-elpa
@@ -359,7 +360,7 @@ dependencies."
 Several OPTIONS are available:
 
 `~error-on-warn': set `byte-compile-error-on-warn'"
-  (declare (emake-environment-variables "PACKAGE_LISP")
+  (declare (emake-environment-variables ("PACKAGE_LISP" . "these files are compiled"))
            (emake-default-target "compile"))
   (require 'bytecomp)
   (emake-with-options options
@@ -441,7 +442,7 @@ PACKAGE_ARCHIVES is a list of archives to use; see
   (declare (emake-environment-variables
             "PACKAGE_TEST_DEPS"
             "PACKAGE_TEST_ARCHIVES"
-            "PACKAGE_TESTS"
+            ("PACKAGE_TESTS" . "these files are loaded before the test-runner is called")
             "PACKAGE_ARCHIVES")
            (emake-default-target "test"))
   (when-let ((test-dependencies (emake--clean-list "PACKAGE_TEST_DEPS")))
