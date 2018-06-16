@@ -283,16 +283,16 @@ The executed function is emake-my-TARGET if bound, else emake-TARGET."
         (debug-on-error (member "debug" emake--debug-flags)))
     (when (member "show-environment" emake--debug-flags)
       (emake-task "showing relevant environment information"
-                  (dolist (var (function-get fun 'emake-environment-variables))
-                    (when (emake--getenv var)
-                      (emake--message "    %s=%S" var (emake--getenv var))
-                      (emake--message "      %s" (cdr (assoc-string var emake-environment-variables)))))))
-    (emake--message (if command-line-args-left
-                        "Running target %S with function `%S' with arguments %S"
-                      "Running target %S with function `%S'")
-                    target fun command-line-args-left)
-    (apply fun (prog1 command-line-args-left
-                 (setq command-line-args-left nil)))))
+        (dolist (var (function-get fun 'emake-environment-variables))
+          (when (emake--getenv var)
+            (emake--message "    %s=%S" var (emake--getenv var))
+            (emake--message "      %s" (cdr (assoc-string var emake-environment-variables)))))))
+    (emake-task (format (if command-line-args-left
+                            "Running target %S with function `%S' with arguments %S"
+                          "Running target %S with function `%S'")
+                        target fun command-line-args-left)
+      (apply fun (prog1 command-line-args-left
+                   (setq command-line-args-left nil))))))
 
 (defmacro emake-with-options (args options &rest body)
   "With ARGS, determine and bind OPTIONS while executing BODY.
