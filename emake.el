@@ -286,10 +286,11 @@ The executed function is emake-my-TARGET if bound, else emake-TARGET."
                       "Running target %S with function `%S'")
                     target fun command-line-args-left)
     (when (member "show-environment" emake--debug-flags)
-      (emake--message (format "relevant environment: %s"
-                              (mapconcat (lambda (var) (format "%s=%S" var (emake--getenv var)))
-                                         (function-get fun 'emake-environment-variables)
-                                         " "))))
+      (emake-task "showing relevant environment information"
+        (dolist (var (function-get fun 'emake-environment-variables))
+          (when (emake--getenv var)
+            (emake--message "    %s=%S" var (emake--getenv var))
+            (emake--message "      %s" (cdr (assoc-string var emake-environment-variables)))))))
     (apply fun (prog1 command-line-args-left
                  (setq command-line-args-left nil)))))
 
