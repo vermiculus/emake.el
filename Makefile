@@ -1,3 +1,5 @@
+EMACS_VERSION ?= 26.1
+
 PACKAGE_BASENAME := emake
 .DEFAULT_GOAL: help
 
