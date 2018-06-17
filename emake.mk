@@ -42,6 +42,10 @@ help:                           ## show help
 	@grep -hE '(^[A-Za-z_/%\.\-]+:.*?##.*$$)|(^##.*$$)' $(MAKEFILE_LIST) \
 		| awk 'BEGIN {FS = ":.*?## "}{printf "\033[32m%-30s\033[0m %s\n", $$1, $$2}' \
 		| sed -e 's/\[32m## */[33m/'
+
+emake-help: emacs emake.el      ## summarize all targets defined by EMake
+	@$(EMAKE) help
+
 help-%: emacs emake.el          ## show help for EMake target '%'
 	$(EMAKE) help $*
 

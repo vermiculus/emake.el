@@ -386,18 +386,27 @@ Several OPTIONS are available:
                (when (re-search-forward "^.*:\\(Error\\|Warning\\): .*$" nil t)
                  (error "There were compile-time errors"))))))))))
 
-(defun emake-help (target)
-  "Get help for TARGET.
+(defun emake-help (&optional target)
+  "Get help for TARGET or summarize all defined targets.
 Uses the documentation string to get help for an EMake target.
 If the target's behavior is driven by environment variables,
-those will be reported as well."
+those will be reported as well.
+
+If TARGET is nil, then all defined targets are presented along
+with the first line of their documentation string."
   (declare (emake-default-target "help"))
-  (let ((fn (emake--resolve-target target)))
-    (emake-task (format "Documentation of %s (function %S)" target fn)
-      (princ (documentation fn))
-      (princ "\n\n----\n\nThis target uses the following environment variables:\n\n")
-      (emake--env-help fn)
-      (princ "\n"))))
+  (if target
+      (let ((fn (emake--resolve-target target)))
+        (emake-task (format "Documentation of %s (function %S)" target fn)
+          (princ (documentation fn))
+          (princ "\n\n----\n\nThis target uses the following environment variables:\n\n")
+          (emake--env-help fn)
+          (princ "\n")))
+    (emake-task "summarizing EMake targets"
+      (maphash
+       (lambda (target fn)
+         (princ (format "    %s: %s\n" target (car (split-string (documentation fn) "\n")))))
+       (emake--targets)))))
 
 (defun emake--env-help (fn &optional with-value)
   "Show help for function FN.
