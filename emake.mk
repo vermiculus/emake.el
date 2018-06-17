@@ -91,7 +91,7 @@ emake.el:                       ## download the EMake script
 emacs-travis.mk:                ## download the emacs-travis.mk Makefile
 	$(CURL) -O 'https://raw.githubusercontent.com/flycheck/emacs-travis/master/emacs-travis.mk'
 
-.elpa: emake.el                ## install dependencies as determined by EMake
+.elpa: emake.el                 ## install dependencies as determined by EMake
 	$(EMAKE) install
 
 emacs: emake.el                 ## report emacs version (installing $EMACS_VERSION if necessary)
