@@ -38,9 +38,12 @@ CURL ?= curl --fail --silent --show-error --insecure --location --retry 9 --retr
 # these names.
 .PHONY: clean setup install compile test help emacs install-emacs
 
+### EMake-released targets
+
 help:                           ## show help
 	@grep -hE '(^[A-Za-z_/%\.\-]+:.*?##.*$$)|(^##.*$$)' $(MAKEFILE_LIST) \
 		| awk 'BEGIN {FS = ":.*?## "}{printf ($$2=="" ? "\033[32m%s\033[0m\n" : "\033[32m%-30s\033[0m %s\n"), $$1, $$2}' \
+		| sed -e 's/\[32m### */[31;1;4m/' \
 		| sed -e 's/\[32m## */[33m/'
 
 emake-help: emacs emake.el      ## summarize all targets defined by EMake
