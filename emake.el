@@ -259,20 +259,38 @@ ARCHIVES is a list of archives like `package-archives'."
 
 ;;; Running targets
 
+(defun emake--targets ()
+  "Return a hash table of all defined targets."
+  (let ((dict (make-hash-table :test 'equal))
+        target-fns)
+    ;; Narrow our search space
+    (mapatoms
+     (lambda (sym)
+       (when (or (function-get sym 'emake-default-target)
+                 (function-get sym 'emake-target))
+         (push sym target-fns))))
+    ;; Search for custom targets first
+    (mapc
+     (lambda (sym)
+       (when-let ((target (function-get sym 'emake-target)))
+         (cl-assert (not (gethash target dict)) nil
+                    (format "Shadowed target: %s (%S vs. %S) [%S]"
+                            target sym (gethash target dict) target-fns))
+         (puthash target sym dict)))
+     target-fns)
+    ;; Then fill in the default targets where there are holes
+    (mapc
+     (lambda (sym)
+       (when-let ((default-target (function-get sym 'emake-default-target)))
+         (unless (gethash default-target dict)
+           (puthash default-target sym dict))))
+     target-fns)
+    dict))
+
 (defun emake--resolve-target (target)
   "Resolve TARGET to a function."
-  (let (candidates finder)
-    ;; make sure `candidates' gets closed onto the right thing
-    (setq finder (lambda (sym)
-                   (lambda (f)
-                     (when (string= target (function-get f sym))
-                       (push f candidates)))))
-    (mapatoms (funcall finder 'emake-target))
-    (unless candidates
-      (mapatoms (funcall finder 'emake-default-target)))
-    (if (= 1 (length candidates))
-        (car candidates)
-      (error "Target unresolved: %s => %S" target candidates))))
+  (or (gethash target (emake--targets))
+      (error "Target unresolved: %s" target)))
 
 (defun emake (target)
   "Search for a function matching TARGET and execute it.
