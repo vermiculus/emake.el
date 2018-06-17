@@ -125,20 +125,17 @@ debug:
   set `debug-on-error' when running targets.")
 
 (defun emake-verify-version ()
-  "Prints \"ok\" if the correct version of Emacs is being used.
+  "Signals an error unless the correct version of Emacs is being used.
 Compares the MAJOR.MINOR versions of variable `emacs-version' to
 the EMACS_VERSION environment variable.
-
-Note that if this is called in a batch run, output will go to
-stderr.
 
 Used in companion file `emake.mk'."
   (declare (emake-environment-variables "EMACS_VERSION"))
   (let ((major-minor (and (string-match (rx (+ digit) ?. (+ digit))
                                         emacs-version)
                           (match-string 0 emacs-version))))
-    (when (version= major-minor (emake--getenv "EMACS_VERSION"))
-      (message "ok"))))
+    (unless (version= major-minor (emake--getenv "EMACS_VERSION"))
+      (error "wrong version"))))
 
 (defun emake--message (format &rest args)
   "Print a message to standard out.

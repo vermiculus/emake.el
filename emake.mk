@@ -94,14 +94,8 @@ emacs-travis.mk:                ## download the emacs-travis.mk Makefile
 .elpa: emake.el                ## install dependencies as determined by EMake
 	$(EMAKE) install
 
-# no emacs or not the right version?  install the right emacs.
-ifneq (ok,$(shell $(EMACS) -batch -l emake.el -f emake-verify-version 2>&1))
-# outputs 'ok' if the major.minor of `emacs-version' is EMACS_VERSION.
-# Note if emacs is not in PATH, then we still won't output "ok" (and
-# Make won't freak out from the exit code).
-emacs: install-emacs
-endif
-emacs:                          ## report emacs version (installing $EMACS_VERSION if necessary)
+emacs: emake.el                 ## report emacs version (installing $EMACS_VERSION if necessary)
+	$(EMACS) -batch -l emake.el -f emake-verify-version 2>&1 || $(MAKE) install-emacs
 	$(EMACS) --version
 
 install-emacs: emacs-travis.mk	## build and install a fresh emacs
