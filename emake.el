@@ -397,9 +397,9 @@ those will be reported as well."
               (setq var (car entry)
                     desc (cdr entry))
             (setq var entry))
-          (princ (format "    %s: %s\n" var (cdr (assoc-string var emake-environment-variables))))
+          (princ (format "    %s\n      %s\n" var (cdr (assoc-string var emake-environment-variables))))
           (when desc
-            (princ (format "      %s\n" desc)))))
+            (princ (format "      [target-specific] %s\n" desc)))))
       (princ "\n"))))
 
 ;;; Running tests
