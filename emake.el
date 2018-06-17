@@ -102,6 +102,7 @@ See also `emake--resolve-target'."
 
 (defun emake--getenv (variable)
   "Get the value of VARIABLE in the current environment."
+  (cl-assert (assoc-string variable emake-environment-variables) 'show-args)
   (if-let ((entry (assoc-string variable emake--env-cache)))
       (cdr entry)
     (let ((val (getenv variable)))
