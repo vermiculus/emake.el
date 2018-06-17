@@ -351,7 +351,7 @@ dependencies."
 Several OPTIONS are available:
 
 `~error-on-warn': set `byte-compile-error-on-warn'"
-  (declare (emake-environment-variables ("PACKAGE_LISP" . "these files are compiled"))
+  (declare (emake-environment-variables ("PACKAGE_LISP" . "these are the files that are compiled"))
            (emake-default-target "compile"))
   (require 'bytecomp)
   (emake-with-options options
