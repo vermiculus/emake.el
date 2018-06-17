@@ -135,7 +135,7 @@ Used in companion file `emake.mk'."
                                         emacs-version)
                           (match-string 0 emacs-version))))
     (unless (version= major-minor (emake--getenv "EMACS_VERSION"))
-      (error "wrong version"))))
+      (error "Wrong version"))))
 
 (defun emake--message (format &rest args)
   "Print a message to standard out.
