@@ -287,23 +287,13 @@ The executed function is emake-my-TARGET if bound, else emake-TARGET."
                             "Running target %S with function `%S' with arguments %S"
                           "Running target %S with function `%S'")
                         target fun command-line-args-left)
-      (when (member "show-environment" emake--debug-flags)
+      (when-let ((behavior (cond
+                            ((member "show-environment" emake--debug-flags) t)
+                            ((member "show-environment:non-nil" emake--debug-flags) 'only))))
         (emake-task "showing relevant environment information"
-          (mapc #'emake--var-message (function-get fun 'emake-environment-variables))))
+          (emake--env-help fun behavior)))
       (apply fun (prog1 command-line-args-left
                    (setq command-line-args-left nil))))))
-
-(defun emake--var-message (entry)
-  "Show information for environment variable ENTRY."
-  (let (var specific-description)
-    (pcase entry
-      (`(,v . ,d) (setq var v specific-description d))
-      (`,v (setq var v)))
-    (when (emake--getenv var)
-      (emake--message "    %s=%S" var (emake--getenv var))
-      (emake--message "      %s" (cdr (assoc-string var emake-environment-variables)))
-      (when (stringp specific-description)
-        (emake--message "      [target-specific] %s" specific-description)))))
 
 (defmacro emake-with-options (args options &rest body)
   "With ARGS, determine and bind OPTIONS while executing BODY.
@@ -391,16 +381,33 @@ those will be reported as well."
     (emake-task (format "Documentation of %s (function %S)" target fn)
       (princ (documentation fn))
       (princ "\n\n----\n\nThis target uses the following environment variables:\n\n")
-      (dolist (entry (function-get fn 'emake-environment-variables))
-        (let (var desc)
-          (if (consp entry)
-              (setq var (car entry)
-                    desc (cdr entry))
-            (setq var entry))
-          (princ (format "    %s\n      %s\n" var (cdr (assoc-string var emake-environment-variables))))
-          (when desc
-            (princ (format "      [target-specific] %s\n" desc)))))
+      (emake--env-help fn)
       (princ "\n"))))
+
+(defun emake--env-help (fn &optional with-value)
+  "Show help for function FN.
+If WITH-VALUE is non-nil, values for the environment variables
+will also be reported.  If it is the special value `only', then
+help for ENTRY will only display if the environment variable has
+a non-nil value according to `emake--getenv'."
+  (dolist (entry (function-get fn 'emake-environment-variables))
+    (let (var val doc this-doc)
+      (cond
+       ((stringp entry)
+        (setq var entry))
+       ((consp entry)
+        (setq var      (car entry)
+              this-doc (cdr entry))))
+      (setq doc (cdr (assoc-string var emake-environment-variables)))
+      (when with-value
+        (setq val (emake--getenv var)))
+      (unless (and (eq with-value 'only) (null val))
+        (if with-value
+            (princ (format "    %s=%S\n" var val))
+          (princ (format "    %s\n" var)))
+        (princ (format "      %s\n" doc))
+        (when this-doc
+          (princ (format "      * %s\n" this-doc)))))))
 
 ;;; Running tests
 
