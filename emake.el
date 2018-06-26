@@ -134,7 +134,7 @@ Used in companion file `emake.mk'."
   (let ((major-minor (and (string-match (rx (+ digit) ?. (+ digit))
                                         emacs-version)
                           (match-string 0 emacs-version))))
-    (unless (version= major-minor (emake--getenv "EMACS_VERSION"))
+    (unless (version= major-minor (string-trim (emake--getenv "EMACS_VERSION")))
       (error "Wrong version"))))
 
 (defun emake--message (format &rest args)
