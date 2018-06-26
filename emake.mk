@@ -101,7 +101,7 @@ emacs-travis.mk:                ## download the emacs-travis.mk Makefile
 
 emake: emacs emake.el
 emacs: emake.el                 ## report emacs version (installing $EMACS_VERSION if necessary)
-	$(EMACS) -batch -l emake.el -f emake-verify-version 2>&1 || $(MAKE) install-emacs
+	$(EMACS) -batch -l emake.el -f emake-verify-version || $(MAKE) install-emacs
 	$(EMACS) --version
 
 install-emacs: emacs-travis.mk	## build and install a fresh emacs
