@@ -11,6 +11,10 @@ ifndef EMAKE_SHA1
 $(error EMAKE_SHA1 is not set)
 endif
 
+ifndef EMACS_VERSION
+$(error EMACS_VERSION is not set)
+endif
+
 # User options
 #   EMACS_ARGS: [extra arguments for each invocation of emacs]
 #   (below; see README)
