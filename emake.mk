@@ -36,7 +36,7 @@ CURL ?= curl --fail --silent --show-error --insecure --location --retry 9 --retr
 
 # Set up our phony targets so Make doesn't think there are files by
 # these names.
-.PHONY: clean setup install compile test help emacs install-emacs
+.PHONY: clean setup compile help help-% emacs install-emacs emake
 
 ### EMake-released targets
 
@@ -47,10 +47,10 @@ help:                           ## show help
 		| sed -e 's/\[32m### */[31;1;4m/' \
 		| sed -e 's/\[32m## */[33;4m/'
 
-emake-help: emacs emake.el      ## summarize all targets defined by EMake
+emake-help: emake ## summarize all targets defined by EMake
 	@$(EMAKE) help
 
-help-%: emacs emake.el          ## show help for EMake target '%'
+help-%: emake ## show help for EMake target '%'
 	$(EMAKE) help $*
 
 
@@ -64,28 +64,25 @@ clean::                         ## clean all generated files
 
 ## Commands useful for Travis
 
-# Tell Make how to 'setup' this project (e.g., for Travis).  This
-# requires both Emacs to be installed and the `emake.el' script to be
-# available.
-setup: emacs emake.el
+setup: emake ## install emacs/emake
 
-compile: .elpa                  ## compile the project
+compile: .elpa emake ## compile the project
 	rm -f $(PACKAGE_LISP:.el=.elc)
 	$(EMAKE) compile ~error-on-warn
 
 ## Running specific tests
 
-lint-checkdoc: .elpa            ## checkdoc
+lint-checkdoc: .elpa emake ## checkdoc
 	$(EMAKE) test checkdoc
 
 lint-package-lint: PACKAGE_TEST_DEPS += package-lint
 lint-package-lint: PACKAGE_TEST_ARCHIVES += melpa
-lint-package-lint: .elpa        ## package-lint
+lint-package-lint: .elpa emake ## package-lint
 	$(EMAKE) test package-lint
 
 test-buttercup: PACKAGE_TEST_DEPS += buttercup
-lint-package-lint: PACKAGE_TEST_ARCHIVES += melpa
-test-buttercup: .elpa           ## buttercup
+test-buttercup: PACKAGE_TEST_ARCHIVES += melpa
+test-buttercup: .elpa emake ## buttercup
 	$(EMAKE) test buttercup
 
 test-ert: .elpa                 ## ERT
@@ -102,6 +99,7 @@ emacs-travis.mk:                ## download the emacs-travis.mk Makefile
 .elpa: emake.el                 ## install dependencies as determined by EMake
 	$(EMAKE) install
 
+emake: emacs emake.el
 emacs: emake.el                 ## report emacs version (installing $EMACS_VERSION if necessary)
 	$(EMACS) -batch -l emake.el -f emake-verify-version 2>&1 || $(MAKE) install-emacs
 	$(EMACS) --version
