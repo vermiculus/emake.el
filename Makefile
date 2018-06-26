@@ -1,5 +1,5 @@
 EMACS_VERSION ?= 26.1
-EMAKE_SHA1 := master 		# hack to make tests work
+EMAKE_SHA1 := . # hack to make tests work
 
 PACKAGE_BASENAME := emake
 .DEFAULT_GOAL: help
