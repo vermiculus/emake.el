@@ -536,7 +536,7 @@ created by `checkdoc-file' is non-empty."
 (defun emake--test-helper-package-lint ()
   "Helper function for `package-lint' test backend."
   (require 'package-lint)
-  (let ((command-line-args-left (emake--clean-list "PACKAGE_LISP")))
+  (let ((command-line-args-left (emake--clean-list "PACKAGE_FILE")))
     (package-lint-batch-and-exit)))
 
 (provide 'emake)
