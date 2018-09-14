@@ -60,14 +60,6 @@ help-%: emake ## show help for EMake target '%'
 	$(EMAKE) help $*
 
 
-# Tell Make how to 'clean' this project; use double-colon to allow additions downstream
-clean::                         ## clean all generated files
-	rm -f *.elc             # delete compiled files
-	rm -rf .elpa/           # delete dependencies
-	rm -rf .elpa.test/
-	rm -f emacs-travis.mk
-	rm -f emake.el
-
 ## Commands useful for Travis
 
 setup: emake ## install emacs/emake
