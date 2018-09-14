@@ -1,5 +1,2 @@
 *.elc
-/emake.el
-/.elpa/
-/.elpa.test/
-/emacs-travis.mk
+/.emake/

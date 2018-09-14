@@ -1,13 +1,17 @@
+EMAKE_SHA1 := fake-hash		# hack to make tests work
 EMACS_VERSION ?= 26.1
-EMAKE_SHA1 := . # hack to make tests work
-
 PACKAGE_BASENAME := emake
-.DEFAULT_GOAL: help
 
-clean::
-	cp emake.el emake.el.bak # standard Makefile kills emake.el; save it off.
+.DEFAULT_GOAL: help
+.PHONY: $(EMAKE_WORKDIR)/emake.el # remake every time
+
 include emake.mk
-clean::
-	mv emake.el.bak emake.el # ...and restore.
+
+# redeclare how to create emake.el
+$(EMAKE_WORKDIR)/emake.el:
+	cp emake.el $(EMAKE_WORKDIR)/emake.el
 
 test: lint-checkdoc lint-package-lint ## run various linting tools
+
+clean:
+	rm -rf $(EMAKE_WORKDIR)

@@ -86,6 +86,7 @@ See also `emake--resolve-target'."
 (defvar emake-environment-variables
   '(("EMACS_VERSION" . "MAJOR.MINOR version of Emacs we intended to run under")
     ("EMAKE_DEBUG_FLAGS" . "have EMake print debugging information; see source for details")
+    ("EMAKE_WORKDIR" . "directory of all files downloaded by Emake")
     ("PACKAGE_FILE" . "root file of your package")
     ("PACKAGE_TESTS" . "space-delimited list of Lisp files to load to define your tests")
     ("PACKAGE_LISP" . "space-delimited list of Lisp files in this package")
@@ -204,7 +205,9 @@ archives.  See also `emake-package-archive-master-alist'.  BODY
 is the executable body of the macro."
   (let ((Sarchives (cl-gensym)))
     `(let* ((,Sarchives (emake--clean-list ,archives-env))
-            (package-user-dir (expand-file-name ,dir emake-project-root))
+            (package-user-dir (expand-file-name
+                               (concat (file-name-as-directory (emake--getenv "EMAKE_WORKDIR")) ,dir)
+                               emake-project-root))
             (package-archives (seq-filter (lambda (pair)
                                             (member (car pair) ,Sarchives))
                                           emake-package-archive-master-alist)))
@@ -215,7 +218,7 @@ is the executable body of the macro."
 (defmacro emake-with-elpa (&rest body)
   "Run BODY after setting up ELPA context."
   (declare (debug t))
-  (emake--genform-with-elpa ".elpa" "PACKAGE_ARCHIVES" body))
+  (emake--genform-with-elpa "elpa" "PACKAGE_ARCHIVES" body))
 
 (defmacro emake-with-elpa-test (&rest body)
   "Run BODY after setting up ELPA context."
@@ -224,7 +227,7 @@ is the executable body of the macro."
      (unless (emake--getenv "PACKAGE_TEST_ARCHIVES")
        (setcdr (assoc-string "PACKAGE_TEST_ARCHIVES" emake--env-cache)
                (emake--getenv "PACKAGE_ARCHIVES")))
-     ,(emake--genform-with-elpa ".elpa.test" "PACKAGE_TEST_ARCHIVES" body)))
+     ,(emake--genform-with-elpa "elpa-test" "PACKAGE_TEST_ARCHIVES" body)))
 
 (defun emake--package-download-archives (archives)
   "Download ARCHIVES if they do not exist locally.
