@@ -20,7 +20,7 @@ env:
 before_install:
 - make emacs
 install:
-- make .elpa
+- make install
 script:
 - make test                     # test uncompiled
 - make compile                  # test compilation
