@@ -1,7 +1,8 @@
 #+Title: Emacs-Make [[https://travis-ci.org/vermiculus/emake.el][https://travis-ci.org/vermiculus/emake.el.svg?branch=master]]
 
 Test Elisp with services like Travis CI without the fuss of Cask --
-just you, your project, and (Emacs-)Make.
+just you, your project, and (Emacs-)Make.  Designed to be used with
+GNU Make, EMake comes with no dependencies other than Emacs 25.
 
 Things EMake does:
 - parses, installs, and runs tests for your package
