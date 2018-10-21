@@ -12,6 +12,10 @@ Things EMake will never do (or 'reasons you may still need Cask'):
 - provide '[[https://bundler.io][bundler]]-like' =exec= abilities (this includes Cask's =emacs=
   and =eval= commands)
 
+You may find it advantageous to use Cask and EMake concurrently during
+project development, but I would recommend executing your tests with
+pure EMake to ensure consistency with CI testing.
+
 ** File Descriptions
 
 - =emake.el= :: This is EMake.  No other file is /necessary/ to run EMake.
