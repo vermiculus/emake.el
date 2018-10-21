@@ -17,8 +17,10 @@ Things EMake will never do (or 'reasons you may still need Cask'):
 - =emake.el= :: This is EMake.  No other file is /necessary/ to run Emake.
 - =emake.mk= :: This is a Makefile distributed with Emake that can drive
                 =emake.el= using a bare minimum of configuration via
-                environment variables.  See [[*EMake.mk][the section]] dedicated to
-                this file near the end of this documentation.
+                environment variables.  It makes certain assumptions
+                about project setup that should be accurate for most
+                projects.  See the section dedicated to this file near
+                the end of this documentation.
 - =example/= :: This is an example project demonstrating the typical use
                 of Emake.
 
