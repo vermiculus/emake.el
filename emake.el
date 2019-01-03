@@ -164,10 +164,14 @@ list of arguments for that format string."
 
 (defvar emake-package-desc
   (when-let ((package-file (emake--getenv "PACKAGE_FILE")))
-    (when (file-readable-p package-file)
-      (with-temp-buffer
-        (insert-file-contents-literally package-file)
-        (package-buffer-info))))
+    (or
+     ;; First, try the *-pkg.el file
+     (package-load-descriptor (file-name-directory (expand-file-name package-file)))
+     ;; If that doesn't work (or doesn't exist), try the base file itself
+     (when (file-readable-p package-file)
+       (with-temp-buffer
+         (insert-file-contents-literally package-file)
+         (package-buffer-info)))))
   "Package description corresponding to the code in PACKAGE_FILE.")
 
 (defvar emake-package-reqs
