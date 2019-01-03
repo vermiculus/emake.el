@@ -514,6 +514,15 @@ PACKAGE_ARCHIVES is a list of archives to use; see
      (let ((command-line-args-left args))
        (funcall test-runner)))))
 
+(defun emake--with-args-from-env (list-env fn)
+  "Use LIST-ENV to populate `command-line-args-left' for FN.
+The environment's value for LIST-ENV is used to simulate
+arguments for a function, FN, that expects them from the command
+line."
+  (let ((command-line-args-left (emake--clean-list list-env)))
+    (emake--message "Simulating command-line arguments: %S" command-line-args-left)
+    (funcall fn)))
+
 (defun emake--test-helper-checkdoc ()
   "Helper function for `checkdoc' test backend.
 `checkdoc' apparently does not have a means to determine if a
@@ -539,8 +548,7 @@ created by `checkdoc-file' is non-empty."
 (defun emake--test-helper-package-lint ()
   "Helper function for `package-lint' test backend."
   (require 'package-lint)
-  (let ((command-line-args-left (emake--clean-list "PACKAGE_FILE")))
-    (package-lint-batch-and-exit)))
+  (emake--with-args-from-env "PACKAGE_FILE" #'package-lint-batch-and-exit))
 
 (provide 'emake)
 ;;; emake.el ends here
