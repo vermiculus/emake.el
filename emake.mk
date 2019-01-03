@@ -99,6 +99,11 @@ compile: $(EMAKE_WORKDIR)/elpa emake ## compile the project
 lint-checkdoc: $(EMAKE_WORKDIR)/elpa emake ## checkdoc
 	$(EMAKE) test checkdoc
 
+lint-elsa: PACKAGE_TEST_DEPS += elsa
+lint-elsa: PACKAGE_TEST_ARCHIVES += melpa
+lint-elsa: emake ## The Emacs Lisp Static Analyzer
+	$(EMAKE) test elsa
+
 lint-package-lint: PACKAGE_TEST_DEPS += package-lint
 lint-package-lint: PACKAGE_TEST_ARCHIVES += melpa
 lint-package-lint: $(EMAKE_WORKDIR)/elpa emake ## package-lint

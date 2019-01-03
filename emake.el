@@ -769,6 +769,7 @@ TEST-RUNNER."
 The environment's value for LIST-ENV is used to simulate
 arguments for a function, FN, that expects them from the command
 line."
+  (declare (indent 1))
   (let ((command-line-args-left (emake--clean-list list-env)))
     (emake-message-debug "Simulating command-line arguments: %S" command-line-args-left)
     (funcall fn)))
@@ -815,6 +816,19 @@ line."
            (emake-environment-variables ("PACKAGE_FILE" . "this is the only file that will be linted; see purcell/package-lint#111")))
   (require 'package-lint)
   (emake--with-args-from-env "PACKAGE_FILE" #'package-lint-batch-and-exit))
+
+(declare-function elsa-run "ext:elsa.el")
+(defun emake--test-helper-elsa ()
+  "Helper function for `elsa' test backend."
+  (declare (emake-default-test "elsa")
+           (emake-environment-variables ("PACKAGE_LISP" . "these files will be analyzed")))
+  (require 'elsa)
+  (emake--with-args-from-env "PACKAGE_LISP"
+    (lambda ()
+      (let ((output (with-output-to-string (elsa-run))))
+        (unless (string-empty-p output)
+          (princ output)
+          (error "Elsa issues detected"))))))
 
 (provide 'emake)
 ;;; emake.el ends here
