@@ -36,7 +36,7 @@ EMAKE = PACKAGE_FILE="$(PACKAGE_FILE)" \
 	PACKAGE_TEST_DEPS="$(PACKAGE_TEST_DEPS)" \
 	PACKAGE_TEST_ARCHIVES="$(PACKAGE_TEST_ARCHIVES)" \
 	EMAKE_WORKDIR="$(EMAKE_WORKDIR)" \
-	$(EMACS) -Q -batch -l '$(EMAKE_WORKDIR)/emake.el' \
+	$(EMACS) --quick --batch --load '$(EMAKE_WORKDIR)/emake.el' \
 	--eval "(setq enable-dir-local-variables nil)" \
 	$(EMACS_ARGS) \
 	--eval "(emake (pop argv))"
