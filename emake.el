@@ -211,7 +211,7 @@ is the executable body of the macro."
             (package-archives (seq-filter (lambda (pair)
                                             (member (car pair) ,Sarchives))
                                           emake-package-archive-master-alist)))
-       (emake-task "initializing package.el"
+       (emake-task "Initializing package.el"
          (package-initialize))
        ,@body)))
 
@@ -257,7 +257,7 @@ ARCHIVES is a list of archives like `package-archives'."
   (emake--package-download-archives package-archives)
   (dolist (package packages)
     (unless (package-installed-p package)
-      (emake-task (format "installing %S" package)
+      (emake-task (format "Installing %S" package)
         (package-install package)))))
 
 ;;; Running targets
@@ -308,7 +308,7 @@ The executed function is emake-my-TARGET if bound, else emake-TARGET."
       (when-let ((behavior (cond
                             ((member "show-environment" emake--debug-flags) t)
                             ((member "show-environment:non-nil" emake--debug-flags) 'only))))
-        (emake-task "showing relevant environment information"
+        (emake-task "Showing relevant environment information"
           (emake--env-help fun behavior)))
       (apply fun (prog1 command-line-args-left
                    (setq command-line-args-left nil))))))
@@ -350,7 +350,7 @@ dependencies."
            (emake-default-target "install"))
   (if emake-package-reqs
       (emake-with-elpa
-       (emake-task (format "installing in %s" (file-relative-name package-user-dir))
+       (emake-task (format "Installing in %s" (file-relative-name package-user-dir))
          ;; install dependencies
          (emake--install
           (thread-last emake-package-reqs
@@ -375,11 +375,11 @@ Several OPTIONS are available:
   (emake-with-options options
       (("error-on-warn" byte-compile-error-on-warn))
     (let (compile-buffer)
-      (emake--message "error-on-warn => %S" byte-compile-error-on-warn)
+      (emake--message "  error-on-warn => %S" byte-compile-error-on-warn)
       (emake-with-elpa
        (add-to-list 'load-path emake-project-root)
        (dolist (f (emake--clean-list "PACKAGE_LISP"))
-         (emake-task (format "compiling %s" f)
+         (emake-task (format "Compiling %s" f)
            (byte-compile-file f)
            (when (and byte-compile-error-on-warn
                       (setq compile-buffer (get-buffer byte-compile-log-buffer)))
@@ -405,7 +405,7 @@ with the first line of their documentation string."
           (princ "\n\n----\n\nThis target uses the following environment variables:\n\n")
           (emake--env-help fn)
           (princ "\n")))
-    (emake-task "summarizing EMake targets"
+    (emake-task "Summarizing EMake targets"
       (maphash
        (lambda (target fn)
          (princ (format "    %s: %s\n" target (car (split-string (documentation fn) "\n")))))
@@ -482,7 +482,7 @@ PACKAGE_ARCHIVES is a list of archives to use; see
            (emake-default-target "test"))
   (when-let ((test-dependencies (emake--clean-list "PACKAGE_TEST_DEPS")))
     (emake-with-elpa-test
-     (emake-task (format "installing test suite dependencies into %s"
+     (emake-task (format "Installing test suite dependencies into %s"
                          (file-relative-name package-user-dir))
        (emake--install (mapcar #'intern test-dependencies)))))
   (let ((entry (assoc-string test-runner emake-test-runner-master-alist)))
@@ -503,14 +503,14 @@ PACKAGE_ARCHIVES is a list of archives to use; see
    (when-let ((test-files (emake--clean-list "PACKAGE_TESTS")))
      (add-to-list 'load-path emake-project-root)
      (dolist (test-file test-files)
-       (emake-task (format "loading test definitions in %s" test-file)
+       (emake-task (format "Loading test definitions in %s" test-file)
          (unless (file-readable-p test-file)
            (error "Cannot read file: %S" test-file))
          ;; load the file with tests
          (load test-file))))
 
    ;; run the tests and exit with an appropriate status
-   (emake-task (format "running test `%S'" test-runner)
+   (emake-task (format "Running test `%S'" test-runner)
      (let ((command-line-args-left args))
        (funcall test-runner)))))
 
@@ -527,7 +527,7 @@ created by `checkdoc-file' is non-empty."
     (ignore-errors
       (kill-buffer guess-checkdoc-error-buffer-name))
     (mapc (lambda (f)
-            (emake-task (format "checking %s" f)
+            (emake-task (format "Checking %s" f)
               (checkdoc-file f)))
           (emake--clean-list "PACKAGE_LISP"))
     (when-let ((buf (get-buffer guess-checkdoc-error-buffer-name)))
