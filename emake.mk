@@ -28,15 +28,16 @@ PACKAGE_TEST_ARCHIVES   ?= gnu
 
 EMACS ?= emacs
 
-# Then, make it easy to invoke Emacs with EMake loaded.
-EMAKE = PACKAGE_FILE="$(PACKAGE_FILE)" \
+EMAKE_ENV = PACKAGE_FILE="$(PACKAGE_FILE)" \
 	PACKAGE_LISP="$(PACKAGE_LISP)" \
 	PACKAGE_TESTS="$(PACKAGE_TESTS)" \
 	PACKAGE_ARCHIVES="$(PACKAGE_ARCHIVES)" \
 	PACKAGE_TEST_DEPS="$(PACKAGE_TEST_DEPS)" \
 	PACKAGE_TEST_ARCHIVES="$(PACKAGE_TEST_ARCHIVES)" \
-	EMAKE_WORKDIR="$(EMAKE_WORKDIR)" \
-	$(EMACS) --quick --batch --load '$(EMAKE_WORKDIR)/emake.el' \
+	EMAKE_WORKDIR="$(EMAKE_WORKDIR)"
+
+# Then, make it easy to invoke Emacs with EMake loaded.
+EMAKE = $(EMAKE_ENV) $(EMACS) --quick --batch --load '$(EMAKE_WORKDIR)/emake.el' \
 	--eval "(setq enable-dir-local-variables nil)" \
 	$(EMACS_ARGS) \
 	--eval "(emake (pop argv))"
@@ -115,3 +116,6 @@ emacs: $(EMAKE_WORKDIR)/emake.el
 install-emacs: $(EMAKE_WORKDIR)/emacs-travis.mk
 	export PATH="$(HOME)/bin:$(PATH)"
 	make -f '$(EMAKE_WORKDIR)/emacs-travis.mk' install_emacs
+
+emake-debug:			## debug with environment variables
+	$(EMAKE_ENV) $(EMACS) --load '$(EMAKE_WORKDIR)/emake.el' $(EMACS_ARGS) --eval "(progn (find-file \"$(EMAKE_WORKDIR)/emake.el\") (cd \"..\"))"
