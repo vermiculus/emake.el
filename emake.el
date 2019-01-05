@@ -166,9 +166,16 @@ list of arguments for that format string."
     (emake-task "determining package descriptor"
       (or
        (emake-task "looking for *-pkg.el file"
-         (emake--message (expand-file-name package-file))
-         (emake--message (file-name-directory (expand-file-name package-file)))
-         (package-load-descriptor (file-name-directory (expand-file-name package-file))))
+         ;; `package--description-file' is slightly broken in this
+         ;; case.  It relies on the name of directory passed to
+         ;; `package-load-descriptor'.  The directory name is not
+         ;; always reliable, though, for obvious reasons.
+
+         ;; We have some special knowledge about the package provided
+         ;; to us via environment variables; use it to provide an
+         ;; alternative definition for `package--description-file'.
+         (cl-flet ((package--description-file (_pkg-dir) (concat (file-name-base package-file) "-pkg.el")))
+           (package-load-descriptor (file-name-directory (expand-file-name package-file)))))
        (progn
          (emake--message "didn't find a package descriptor")
          (emake-task (format "parsing headers in %S" package-file)
