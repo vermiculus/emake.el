@@ -180,10 +180,8 @@ list of arguments for that format string."
 
 (defvar emake-package-reqs
   (when emake-package-desc
-    (delq nil (mapcar (lambda (x)
-                        (unless (eq (car x) 'emacs)
-                          x))
-                      (package-desc-reqs emake-package-desc))))
+    (cl-remove-if (lambda (x) (eq (car x) 'emacs))
+                  (package-desc-reqs emake-package-desc)))
   "Non-emacs dependencies of PACKAGE_FILE.")
 
 (defvar emake-project-root
