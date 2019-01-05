@@ -46,7 +46,7 @@ CURL ?= curl --fail --silent --show-error --insecure --location --retry 9 --retr
 
 # Set up our phony targets so Make doesn't think there are files by
 # these names.
-.PHONY: setup install compile help help-% emacs install-emacs emake
+.PHONY: setup install compile help help-% emacs install-emacs install-emacs-travis install-evm emake
 
 ### EMake-released targets
 
@@ -118,9 +118,53 @@ emacs: $(EMAKE_WORKDIR)/emake.el
 	$(EMACS) -batch -l '$(EMAKE_WORKDIR)/emake.el' -f emake-verify-version || $(error Wrong version!)
 endif
 
-install-emacs: $(EMAKE_WORKDIR)/emacs-travis.mk
-	export PATH="$(HOME)/bin:$(PATH)"
-	make -f '$(EMAKE_WORKDIR)/emacs-travis.mk' install_emacs
-
 emake-debug:			## debug with environment variables
 	$(EMAKE_ENV) $(EMACS) --load '$(EMAKE_WORKDIR)/emake.el' $(EMACS_ARGS) --eval "(progn (find-file \"$(EMAKE_WORKDIR)/emake.el\") (cd \"..\"))"
+
+# Installing Emacs on CI - use EVM where we can; emacs-travis elsewhere
+ifneq ($(CI),true)
+# We probably don't want to do this outside CI
+install-emacs:
+	$(error Refusing to install emacs outside CI)
+else
+
+# Determine if we can use EVM.  In general, it's much faster to
+# install as it uses pre-compiled binaries.
+EMAKE_USE_EVM := true
+# The only times we don't want to do this:
+#
+#  1) when we're not on Linux (the pre-compiled binaries obviously
+#  won't work; they're built for Travis's Linux)
+ifeq ($(TRAVIS_OS_NAME),osx)
+EMAKE_USE_EVM := false
+endif
+#
+#  2) when we're trying to test on the snapshot build.  EVM simply
+#  doesn't pull straight from git -- it uses pre-compiled binaries.
+#  (That's kinda the point.)  It's incredibly slow, but at least it
+#  works correctly!
+ifeq ($(EMACS_VERSION),snapshot)
+EMAKE_USE_EVM := false
+endif
+
+ifeq ($(EMAKE_USE_EVM),true)
+export PATH := $(HOME)/.evm/bin:$(PATH)
+install-emacs: install-evm
+ifeq ($(TRAVIS),true)
+# Travis has special Docker needs
+	evm config path /tmp
+	evm install emacs-$(EMACS_VERSION)-travis --use --skip
+else
+	evm install emacs-$(EMACS_VERSION) --use --skip
+endif
+else
+export PATH := $(HOME)/bin:$(PATH)
+install-emacs: install-emacs-travis
+	make -f '$(EMAKE_WORKDIR)/emacs-travis.mk' install_emacs
+endif
+endif
+
+install-emacs-travis: $(EMAKE_WORKDIR)/emacs-travis.mk
+
+install-evm:
+	git clone "https://github.com/rejeep/evm.git" "$(HOME)/.evm"
