@@ -484,6 +484,8 @@ PACKAGE_ARCHIVES is a list of archives to use; see
             ("PACKAGE_TESTS" . "these files are loaded before the test-runner is called")
             "PACKAGE_ARCHIVES")
            (emake-default-target "test"))
+  (interactive (list (completing-read "Run test in this session: "
+                                      (mapcar #'car emake-test-runner-master-alist))))
   (when-let ((test-dependencies (emake--clean-list "PACKAGE_TEST_DEPS")))
     (emake-with-elpa-test
      (emake-task (format "Installing test suite dependencies into %s"
