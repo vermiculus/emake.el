@@ -37,8 +37,11 @@ focus removes complexity that can cause false failures in your testing
 This reduction of complexity naturally leads to a *more stable build*.
 
 Free of dependencies, EMake is faster to install.  In my own projects,
-switching from Cask to EMake reduced build time by 90 seconds.  While
-we surely shouldn't be /too/ concerned about some faceless VM's time, we
+switching from Cask to EMake reduced build time by 90 seconds.  Thanks
+to pre-built binaries provided by [[https://github.com/rejeep/evm][EVM]], the average installation time
+(i.e., everything after container spinup and before your tests run)
+takes less than ten seconds for a released version of Emacs.  While we
+surely shouldn't be /too/ concerned about some faceless VM's time, we
 should be *good stewards* of the resources freely provided to us.
 
 Because it relies only on existing tools, EMake is more pliable than
