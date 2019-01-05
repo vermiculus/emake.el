@@ -174,8 +174,20 @@ list of arguments for that format string."
          ;; We have some special knowledge about the package provided
          ;; to us via environment variables; use it to provide an
          ;; alternative definition for `package--description-file'.
-         (cl-flet ((package--description-file (_pkg-dir) (concat (file-name-base package-file) "-pkg.el")))
-           (package-load-descriptor (file-name-directory (expand-file-name package-file)))))
+
+         ;; Ideally this would work everywhere (as it does on my
+         ;; machine), but for some unknown reason, it does not work on
+         ;; Travis.  Instead, we effectively re-implement
+         ;; `package-load-descriptor' below (without the fanciness).
+         '(cl-flet ((package--description-file (_pkg-dir) (concat (file-name-base package-file) "-pkg.el")))
+            (package-load-descriptor (file-name-directory (expand-file-name package-file))))
+         (let ((pkg-file (concat (file-name-base package-file) "-pkg.el")))
+           (when (file-readable-p pkg-file)
+             (package-process-define-package
+              (with-temp-buffer
+                (insert-file-contents pkg-file)
+                (goto-char (point-min))
+                (read (current-buffer)))))))
        (progn
          (emake--message "didn't find a package descriptor")
          (emake-task (format "parsing headers in %S" package-file)
