@@ -1,6 +1,6 @@
 ;;; emake.el --- simple automated Elisp testing  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2018  Sean Allred
+;; Copyright (C) 2018-2019  Sean Allred
 
 ;; Author: Sean Allred <code@seanallred.com>
 ;; Keywords: tools, lisp
