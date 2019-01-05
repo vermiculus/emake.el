@@ -66,7 +66,7 @@ help-%: emake ## show help for EMake target '%'
 
 ## Commands useful for Travis
 
-setup: emake ## install emacs/emake
+setup: emacs emake ## install emacs/emake
 
 install: $(EMAKE_WORKDIR)/elpa ## install dependencies as determined by EMake
 
@@ -108,10 +108,15 @@ $(EMAKE_WORKDIR)/emacs-travis.mk: $(EMAKE_WORKDIR)
 $(EMAKE_WORKDIR)/elpa: $(EMAKE_WORKDIR)/emake.el
 	$(EMAKE) install
 
-emake: emacs $(EMAKE_WORKDIR)/emake.el
-emacs: $(EMAKE_WORKDIR)/emake.el
-	$(EMACS) -batch -l '$(EMAKE_WORKDIR)/emake.el' -f emake-verify-version || $(MAKE) install-emacs
+emake: $(EMAKE_WORKDIR)/emake.el
+
+ifeq ($(CI),true)
+emacs: install-emacs
 	$(EMACS) --version
+else
+emacs: $(EMAKE_WORKDIR)/emake.el
+	$(EMACS) -batch -l '$(EMAKE_WORKDIR)/emake.el' -f emake-verify-version || $(error Wrong version!)
+endif
 
 install-emacs: $(EMAKE_WORKDIR)/emacs-travis.mk
 	export PATH="$(HOME)/bin:$(PATH)"
