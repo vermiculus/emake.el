@@ -167,4 +167,6 @@ endif
 install-emacs-travis: $(EMAKE_WORKDIR)/emacs-travis.mk
 
 install-evm:
+ifeq ($(wildcard "$(HOME)/.evm/."),)
 	git clone "https://github.com/rejeep/evm.git" "$(HOME)/.evm"
+endif
