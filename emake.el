@@ -161,7 +161,8 @@ list of arguments for that format string."
 
 ;;; Package metadata
 
-(defvar emake-package-desc
+(defun emake-package-desc ()
+  "Package description corresponding to the code in PACKAGE_FILE."
   (when-let ((package-file (emake--getenv "PACKAGE_FILE")))
     (emake-task "determining package descriptor"
       (or
@@ -194,14 +195,13 @@ list of arguments for that format string."
            (when (file-readable-p package-file)
              (with-temp-buffer
                (insert-file-contents-literally package-file)
-               (package-buffer-info))))))))
-  "Package description corresponding to the code in PACKAGE_FILE.")
+               (package-buffer-info)))))))))
 
-(defvar emake-package-reqs
-  (when emake-package-desc
+(defun emake-package-reqs ()
+  "Non-emacs dependencies of PACKAGE_FILE."
+  (when-let ((desc (emake-package-desc)))
     (cl-remove-if (lambda (x) (eq (car x) 'emacs))
-                  (package-desc-reqs emake-package-desc)))
-  "Non-emacs dependencies of PACKAGE_FILE.")
+                  (package-desc-reqs desc))))
 
 (defvar emake-project-root
   (when-let ((package-file (emake--getenv "PACKAGE_FILE")))
@@ -373,12 +373,12 @@ dependencies."
             ("PACKAGE_ARCHIVES" . "used to install dependencies")
             ("PACKAGE_FILE" . "parsed to determine dependencies"))
            (emake-default-target "install"))
-  (if emake-package-reqs
+  (if-let ((reqs (emake-package-reqs)))
       (emake-with-elpa
        (emake-task (format "Installing in %s" (file-relative-name package-user-dir))
          ;; install dependencies
          (emake--install
-          (thread-last emake-package-reqs
+          (thread-last reqs
             (mapcar #'car)
             (mapcar (lambda (p)
                       (unless (thread-last "PACKAGE_IGNORE_DEPS"
