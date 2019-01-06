@@ -146,13 +146,13 @@ else
 
 # Determine if we can use EVM.  In general, it's much faster to
 # install as it uses pre-compiled binaries.
-EMAKE_USE_EVM := true
+EMAKE_USE_EVM ?= true
 # The only times we don't want to do this:
 #
 #  1) when we're not on Linux (the pre-compiled binaries obviously
 #  won't work; they're built for Travis's Linux)
 ifeq ($(TRAVIS_OS_NAME),osx)
-EMAKE_USE_EVM := false
+EMAKE_USE_EVM ?= false
 endif
 #
 #  2) when we're trying to test on the snapshot build.  EVM simply
@@ -160,7 +160,7 @@ endif
 #  (That's kinda the point.)  It's incredibly slow, but at least it
 #  works correctly!
 ifeq ($(EMACS_VERSION),snapshot)
-EMAKE_USE_EVM := false
+EMAKE_USE_EVM ?= false
 endif
 
 ifeq ($(EMAKE_USE_EVM),true)
