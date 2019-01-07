@@ -77,11 +77,21 @@ See also `emake--resolve-target'."
   (function-put fn 'emake-target target)
   nil)
 
+(defun emake--declaration-default-test (fn _fn-args test-fn)
+  (function-put fn 'emake-default-test test-fn)
+  nil)
+
+(defun emake--declaration-test (fn _fn-args test-fn)
+  (function-put fn 'emake-test test-fn)
+  nil)
+
 ;; activate (declare ...) properties
 (nconc defun-declarations-alist
        '((emake-environment-variables emake--declaration-environment-variables)
          (emake-default-target emake--declaration-default-target)
-         (emake-target emake--declaration-target)))
+         (emake-target emake--declaration-target)
+         (emake-default-test emake--declaration-default-test)
+         (emake-test emake--declaration-test)))
 
 (defvar emake-environment-variables
   '(("EMACS_VERSION" . "MAJOR.MINOR version of Emacs we intended to run under")
@@ -489,22 +499,6 @@ a non-nil value according to `emake--getenv'."
 
 ;;; Running tests
 
-(defvar emake-test-runner-master-alist
-  '(("buttercup"    . (progn (require 'buttercup)
-                             'buttercup-run-discover))
-
-    ("checkdoc"     . 'emake--test-helper-checkdoc)
-
-    ("ert"          . (progn (require 'ert)
-                             'ert-run-tests-batch-and-exit))
-
-    ("package-lint" . 'emake--test-helper-package-lint))
-  "Test-runner definition alist.
-Key is the string name of the test-runner.  Value is a form that,
-when evaluated, produces a defined function that will run all
-defined tests and exit Emacs with code 0 if and only if all tests
-pass.")
-
 (defun emake-test (test-runner &rest args)
   "Prepare for and call TEST-RUNNER.
 Argument TEST-RUNNER is a test-runner name in
@@ -512,36 +506,34 @@ Argument TEST-RUNNER is a test-runner name in
 runs the tests.
 
 ARGS is bound to `command-line-args-left' while running
-TEST-RUNNER.
-
-Controlled by environment variables:
-
-PACKAGE_TESTS is a list of files to `load' before running
-TEST-RUNNER.
-
-PACKAGE_TEST_DEPS is a list of packages to use as dependencies of
-the test suite (not necessarily dependencies of the package being
-tested).
-
-PACKAGE_ARCHIVES is a list of archives to use; see
-`emake-package-archive-master-alist'."
+TEST-RUNNER."
   (declare (emake-environment-variables
-            "PACKAGE_TEST_DEPS"
-            "PACKAGE_TEST_ARCHIVES"
+            ("PACKAGE_TEST_DEPS" . "dependencies of test suite")
+            ("PACKAGE_TEST_ARCHIVES" . "archives to use to install test suite dependencies")
             ("PACKAGE_TESTS" . "these files are loaded before the test-runner is called")
-            "PACKAGE_ARCHIVES")
+            ("PACKAGE_ARCHIVES" . "archives to use to install package dependencies"))
            (emake-default-target "test"))
   (interactive (list (completing-read "Run test in this session: "
-                                      (mapcar #'car emake-test-runner-master-alist))))
+                                      (mapcar
+                                       (lambda (s)
+                                         (or (function-get s 'emake-test)
+                                             (function-get s 'emake-default-test)))
+                                       (emake--get-syms-with-props 'emake-default-test 'emake-test)))))
   (when-let ((test-dependencies (emake--clean-list "PACKAGE_TEST_DEPS")))
     (emake-with-elpa-test
      (emake-task (info (format "installing test suite dependencies into %s"
                                (file-relative-name package-user-dir)))
        (emake--install (mapcar #'intern test-dependencies)))))
-  (let ((entry (assoc-string test-runner emake-test-runner-master-alist)))
+  (let* ((tests (seq-filter (lambda (s)
+                              (or (string= test-runner (function-get s 'emake-test))
+                                  (string= test-runner (function-get s 'emake-default-test))))
+                            (emake--get-syms-with-props 'emake-default-test 'emake-test)))
+         (entry (if (<= 2 (length tests))
+                    (error "ambgiuous test-runner %S: %S" test-runner tests)
+                  (car tests))))
     (cond
      (entry
-      (setq test-runner (eval (cdr entry))))
+      (setq test-runner entry))
      ((fboundp (intern test-runner))
       (setq test-runner (intern test-runner)))
      (t
@@ -567,6 +559,14 @@ PACKAGE_ARCHIVES is a list of archives to use; see
      (let ((command-line-args-left args))
        (funcall test-runner)))))
 
+(defun emake--get-syms-with-props (&rest props)
+  "Get all symbols with a value for at least one of PROPS."
+  (let (syms)
+    (mapatoms (lambda (s)
+                (when (cl-find-if (lambda (p) (function-get s p)) props)
+                  (push s syms))))
+    syms))
+
 (defun emake--with-args-from-env (list-env fn)
   "Use LIST-ENV to populate `command-line-args-left' for FN.
 The environment's value for LIST-ENV is used to simulate
@@ -576,14 +576,28 @@ line."
     (emake--message-debug "simulating command-line arguments: %S" command-line-args-left)
     (funcall fn)))
 
+(defun emake--test-helper-ert ()
+  "Runs `ert-run-tests-batch-and-exit'."
+  (declare (emake-default-test "ert"))
+  (ert-run-tests-batch-and-exit))
+
+(declare-function buttercup-run-discover "ext:buttercup.el" ())
+(defun emake--test-helper-buttercup ()
+  "Runs Buttercup tests with `buttercup-run-discover'."
+  (declare (emake-default-test "buttercup"))
+  (require 'buttercup)
+  (buttercup-run-discover))
+
 (defun emake--test-helper-checkdoc ()
-  "Helper function for `checkdoc' test backend.
-`checkdoc' apparently does not have a means to determine if a
-given file has errors and return those errors as data (or even
-just `error' out).  This function hopes to hack around this
-limitation by throwing an error if the `*Warnings*' buffer
-created by `checkdoc-file' is non-empty."
+  "Check documentation for style issues."
+  (declare (emake-default-test "checkdoc")
+           (emake-environment-variables ("PACKAGE_LISP" . "these files are checked")))
   (require 'checkdoc)
+  ;; `checkdoc' apparently does not have a means to determine if a
+  ;; given file has errors and return those errors as data (or even
+  ;; just `error' out).  This function hopes to hack around this
+  ;; limitation by throwing an error if the `*Warnings*' buffer
+  ;; created by `checkdoc-file' is non-empty.
   (let ((guess-checkdoc-error-buffer-name "*Warnings*"))
     ;; This buffer name is hard-coded in checkdoc and it may change
     (ignore-errors
@@ -600,6 +614,8 @@ created by `checkdoc-file' is non-empty."
 (declare-function package-lint-batch-and-exit "ext:package-lint.el")
 (defun emake--test-helper-package-lint ()
   "Helper function for `package-lint' test backend."
+  (declare (emake-default-test "package-lint")
+           (emake-environment-variables ("PACKAGE_FILE" . "this is the only file that will be linted; see purcell/package-lint#111")))
   (require 'package-lint)
   (emake--with-args-from-env "PACKAGE_FILE" #'package-lint-batch-and-exit))
 

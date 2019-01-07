@@ -49,8 +49,8 @@ Cask (at least, more obviously so).  Want to use an environment
 variable to test MELPA-Stable separate from MELPA in your testing
 matrix?  Just configure an environment variable in the matrix itself
 (or use any of Make's facilities for more complicated logic).  Want to
-use an external testing framework?  Throw it in
-~emake-test-runner-master-alist~ with some Elisp.
+use an external testing framework?  Just write a function in Elisp
+with a simple =declare= form.
 
 #+BEGIN_QUOTE
 Anything you want to -- do it.
@@ -104,8 +104,7 @@ invoked as follows:
 Since this is just Elisp, other setup can be made by just evaluating
 some lisp in this invocation or loading an external file.  You might
 want to set ~byte-compile-error-on-warn~, for example, or maybe define
-new testing frameworks by extending ~emake-test-runner-master-alist~.
-It's just Elisp -- no funny business!
+new testing frameworks.  It's just Elisp -- no funny business!
 
 To provide extra information, you can use =EMAKE_DEBUG_FLAGS=, which
 see.
@@ -159,8 +158,10 @@ those definitions from before running the tests.
 
 You can specify which framework to use with an additional argument:
 =$(EMAKE) test ert= tests with ERT (the default) and =$(EMAKE) test
-buttercup= tests with Buttercup.  Other frameworks may be defined in or
-added to ~emake-test-runner-master-alist~.
+buttercup= tests with Buttercup.  You can find a full list of defined
+targets by running =$(EMAKE) help test=.  If your favorite framework
+isn't built-in yet, don't worry!  You can define your own very easily
+as described below in /Extending Emake/.
 
 *** =help=
 Shows documentation for all Makefile targets.
@@ -185,6 +186,7 @@ This target uses the following environment variables:
 emake: Documentation of compile (function emake-compile)...done
 #+END_EXAMPLE
 * Extending EMake
+** New Targets
 Targets can be created (or overridden) by defining a function using
 the =emake-target= property in its =declare= form before calling the ~emake~
 function.
@@ -209,3 +211,20 @@ cl-struct accessors provided by =package.el=).
 
 If your target is generalized and generally useful, consider
 contributing it to this repository!
+
+** New Testing Frameworks
+Similar to defining a new target, there is a =declare= form used for
+defining handlers for new testing frameworks: =emake-test=.  By
+providing this form, the default =test= target will be able to pick up
+your function for use.  For example, here is a definition for running
+Buttercup:
+#+BEGIN_SRC elisp
+  (defun my-buttercup ()
+    "Runs Buttercup tests with `buttercup-run-discover'."
+    (declare (emake-test "buttercup"))
+    (require 'buttercup)
+    (message "I like doing things my way.")
+    (buttercup-run-discover))
+#+END_SRC
+Now, running =$(EMAKE) test buttercup= will kick off your Buttercup
+tests after printing a short message.
