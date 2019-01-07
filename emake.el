@@ -77,6 +77,10 @@ See also `emake--resolve-target'."
   (function-put fn 'emake-target target)
   nil)
 
+(defun emake--declaration-help (fn _fn-args help-fn)
+  (function-put fn 'emake-help help-fn)
+  nil)
+
 (defun emake--declaration-default-test (fn _fn-args test-fn)
   (function-put fn 'emake-default-test test-fn)
   nil)
@@ -90,6 +94,7 @@ See also `emake--resolve-target'."
        '((emake-environment-variables emake--declaration-environment-variables)
          (emake-default-target emake--declaration-default-target)
          (emake-target emake--declaration-target)
+         (emake-help emake--declaration-help)
          (emake-default-test emake--declaration-default-test)
          (emake-test emake--declaration-test)))
 
@@ -461,11 +466,14 @@ with the first line of their documentation string."
   (declare (emake-default-target "help"))
   (if target
       (let ((fn (emake--resolve-target target)))
-        (emake-task (format "documentation of %s (function %S)" target fn)
+        (emake-task (format "help for target `%s' (function %S)" target fn)
           (princ (documentation fn))
-          (princ "\n\n----\n\nThis target uses the following environment variables:\n\n")
-          (emake--env-help fn)
-          (princ "\n")))
+          (princ "\n"))
+        (emake-task "environment variables used"
+          (emake--env-help fn t))
+        (when-let ((fn-help (function-get fn 'emake-help)))
+          (emake-task "target-specific help"
+            (funcall fn-help))))
     (emake-task "summarizing EMake targets"
       (maphash
        (lambda (target fn)
@@ -512,6 +520,7 @@ TEST-RUNNER."
             ("PACKAGE_TEST_ARCHIVES" . "archives to use to install test suite dependencies")
             ("PACKAGE_TESTS" . "these files are loaded before the test-runner is called")
             ("PACKAGE_ARCHIVES" . "archives to use to install package dependencies"))
+           (emake-help emake--test-help)
            (emake-default-target "test"))
   (interactive (list (completing-read "Run test in this session: "
                                       (mapcar
@@ -558,6 +567,21 @@ TEST-RUNNER."
    (emake-task (info (format "running test `%S'" test-runner))
      (let ((command-line-args-left args))
        (funcall test-runner)))))
+
+(defun emake--test-help ()
+  "Print help for all test-runners."
+  (let ((funcs (emake--get-syms-with-props 'emake-default-test 'emake-test))
+        all)
+    (dolist (fn funcs)
+      (push (cons fn (or (function-get fn 'emake-default-test)
+                         (function-get fn 'emake-test)))
+            all))
+    (pcase-dolist (`(,fn . ,test) (sort all (lambda (a b) (string< (cdr a) (cdr b)))))
+      (emake-task (format "help for test `%s' (function %S)" test fn)
+        (princ (documentation fn))
+        (princ "\n")
+        (emake-task "environment variables used"
+          (emake--env-help fn t))))))
 
 (defun emake--get-syms-with-props (&rest props)
   "Get all symbols with a value for at least one of PROPS."
