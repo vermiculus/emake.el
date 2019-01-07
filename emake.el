@@ -411,15 +411,8 @@ dependencies."
        (emake-task (info (format "installing in %s" (file-relative-name package-user-dir)))
          ;; install dependencies
          (emake--install
-          (thread-last reqs
-            (mapcar #'car)
-            (mapcar (lambda (p)
-                      (unless (thread-last "PACKAGE_IGNORE_DEPS"
-                                (emake--clean-list)
-                                (mapcar #'intern )
-                                (memq p))
-                        p)))
-            (delq nil)))))
+          (let ((ignored-reqs (mapcar #'intern (emake--clean-list "PACKAGE_IGNORE_DEPS"))))
+            (mapcar #'car (cl-remove-if (lambda (p) (memq p ignored-reqs)) reqs))))))
     (emake--message-debug "no dependencies detected")))
 
 (defun emake-compile (&rest options)
