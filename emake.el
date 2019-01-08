@@ -78,15 +78,18 @@ See also `emake--resolve-target'."
   nil)
 
 (defun emake--declaration-help (fn _fn-args help-fn)
+  "Note that the help-function for FN is HELP-FN."
   (function-put fn 'emake-help help-fn)
   nil)
 
-(defun emake--declaration-default-test (fn _fn-args test-fn)
-  (function-put fn 'emake-default-test test-fn)
+(defun emake--declaration-default-test (fn _fn-args test-name)
+  "Note that FN is the default handler for TEST-NAME."
+  (function-put fn 'emake-default-test test-name)
   nil)
 
-(defun emake--declaration-test (fn _fn-args test-fn)
-  (function-put fn 'emake-test test-fn)
+(defun emake--declaration-test (fn _fn-args test-name)
+  "Note that FN is a handler for TEST-NAME."
+  (function-put fn 'emake-test test-name)
   nil)
 
 ;; activate (declare ...) properties
@@ -152,7 +155,7 @@ Used in companion file `emake.mk'."
                                         emacs-version)
                           (match-string 0 emacs-version))))
     (unless (version= major-minor (string-trim (emake--getenv "EMACS_VERSION")))
-      (error "wrong version"))))
+      (error "Wrong version"))))
 
 (defun emake--message-internal (format &rest args)
   "Print a message to standard out.
@@ -168,6 +171,10 @@ list of arguments for that format string."
   (apply #'emake--message-internal (concat " " format) args))
 
 (defmacro emake--message-loglevel (fn tag &rest values)
+  "Generate a messaging function.
+FN is the name of the new function.  TAG is a string given to
+note the level of the function.  VALUES is a list of values of
+EMAKE_LOGLEVEL under which this message will print."
   (let ((Sloglevel (cl-gensym)))
     `(defun ,fn (format &rest args)
        ,(format "Print a message to standard out under certain circumstances.
@@ -197,7 +204,7 @@ EMAKE_LOGLEVEL is one of the following values:
                           (`debug (setq description (cadr description))
                                   #'emake--message-debug)
                           (_ #'emake--message)))
-                       (t (error "unrecognized description format")))))
+                       (t (error "Unrecognized description format")))))
     `(let ((,Sdescription (concat ,description "..."))
            (kill-emacs-hook kill-emacs-hook)) ; close this variable
        (push (lambda () (,printer (concat ,Sdescription "done (emacs killed)")))
@@ -212,9 +219,9 @@ EMAKE_LOGLEVEL is one of the following values:
 (defun emake-package-desc ()
   "Package description corresponding to the code in PACKAGE_FILE."
   (when-let ((package-file (emake--getenv "PACKAGE_FILE")))
-    (emake-task (debug "determining package descriptor")
+    (emake-task (debug "Determining package descriptor")
       (or
-       (emake-task (debug "looking for *-pkg.el file")
+       (emake-task (debug "Looking for *-pkg.el file")
          ;; `package--description-file' is slightly broken in this
          ;; case.  It relies on the name of directory passed to
          ;; `package-load-descriptor'.  The directory name is not
@@ -238,8 +245,8 @@ EMAKE_LOGLEVEL is one of the following values:
                 (goto-char (point-min))
                 (read (current-buffer)))))))
        (progn
-         (emake--message-debug "didn't find a package descriptor")
-         (emake-task (debug (format "parsing headers in %S" package-file))
+         (emake--message-debug "Didn't find a package descriptor")
+         (emake-task (debug (format "Parsing headers in %S" package-file))
            (when (file-readable-p package-file)
              (with-temp-buffer
                (insert-file-contents-literally package-file)
@@ -284,7 +291,7 @@ is the executable body of the macro."
             (package-archives (seq-filter (lambda (pair)
                                             (member (car pair) ,Sarchives))
                                           emake-package-archive-master-alist)))
-       (emake-task (debug "initializing package.el")
+       (emake-task (debug "Initializing package.el")
          (package-initialize))
        ,@body)))
 
@@ -314,12 +321,12 @@ ARCHIVES is a list of archives like `package-archives'."
                                       package-user-dir
                                       (car archive))))
         (if (file-exists-p archive-contents)
-            (emake--message-debug "already downloaded `%s' to %s"
+            (emake--message-debug "Already downloaded `%s' to %s"
                                   (car archive)
                                   (file-relative-name archive-contents))
           (push archive empty-archives))))
     (when empty-archives
-      (emake-task (info (format "[%s/] downloading archives: %S"
+      (emake-task (info (format "Downloading archives to `%s/': %S"
                                 (file-relative-name package-user-dir)
                                 empty-archives))
         (let ((package-archives empty-archives))
@@ -330,7 +337,7 @@ ARCHIVES is a list of archives like `package-archives'."
   (emake--package-download-archives package-archives)
   (dolist (package packages)
     (unless (package-installed-p package)
-      (emake-task (info (format "installing %S" package))
+      (emake-task (info (format "Installing %S" package))
         (package-install package)))))
 
 ;;; Running targets
@@ -350,7 +357,7 @@ ARCHIVES is a list of archives like `package-archives'."
      (lambda (sym)
        (when-let ((target (function-get sym 'emake-target)))
          (cl-assert (not (gethash target dict)) nil
-                    (format "shadowed target: %s (%S vs. %S) [%S]"
+                    (format "Shadowed target: %s (%S vs. %S) [%S]"
                             target sym (gethash target dict) target-fns))
          (puthash target sym dict)))
      target-fns)
@@ -366,7 +373,7 @@ ARCHIVES is a list of archives like `package-archives'."
 (defun emake--resolve-target (target)
   "Resolve TARGET to a function."
   (or (gethash target (emake--targets))
-      (error "target unresolved: %s" target)))
+      (error "Target unresolved: %s" target)))
 
 (defun emake (target)
   "Search for a function matching TARGET and execute it.
@@ -375,13 +382,13 @@ The executed function is emake-my-TARGET if bound, else emake-TARGET."
   (let ((fun (emake--resolve-target target))
         (debug-on-error (member "debug" emake--debug-flags)))
     (emake-task (info (format (if command-line-args-left
-                                  "running target %S with function `%S' with arguments %S"
-                                "running target %S with function `%S'")
+                                  "Running target %S with function `%S' with arguments %S"
+                                "Running target %S with function `%S'")
                               target fun command-line-args-left))
       (when-let ((behavior (cond
                             ((member "show-environment" emake--debug-flags) t)
                             ((member "show-environment:non-nil" emake--debug-flags) 'only))))
-        (emake-task (info "showing relevant environment information")
+        (emake-task (info "Showing relevant environment information")
           (emake--env-help fun behavior)))
       (apply fun (prog1 command-line-args-left
                    (setq command-line-args-left nil))))))
@@ -395,15 +402,15 @@ TRUE-VALUE during execution of BODY."
   (let (bindings (Sargs (cl-gensym)))
     (dolist (option options)
       (unless (member (length option) '(2 3))
-        (error "wrong number of arguments in spec %S" option))
+        (error "Wrong number of arguments in spec %S" option))
       (let ((opt (car option))
             (var (cadr option))
             (val (or (= 2 (length option)) ; if there is no default value, use t
                      (nth 2 option))))
         (unless (stringp opt)
-          (error "option must be a string literal: %S" opt))
+          (error "Option must be a string literal: %S" opt))
         (unless (symbolp var)
-          (error "binding must be a symbol literal: %S" var))
+          (error "Binding must be a symbol literal: %S" var))
         (push (list var `(if (member ,(concat "~" opt) ,Sargs) ,val ,var))
               bindings)))
     `(let ((,Sargs ,args))
@@ -423,12 +430,12 @@ dependencies."
            (emake-default-target "install"))
   (if-let ((reqs (emake-package-reqs)))
       (emake-with-elpa
-       (emake-task (info (format "installing in %s" (file-relative-name package-user-dir)))
+       (emake-task (info (format "Installing in %s" (file-relative-name package-user-dir)))
          ;; install dependencies
          (emake--install
           (let ((ignored-reqs (mapcar #'intern (emake--clean-list "PACKAGE_IGNORE_DEPS"))))
             (mapcar #'car (cl-remove-if (lambda (p) (memq p ignored-reqs)) reqs))))))
-    (emake--message-debug "no dependencies detected")))
+    (emake--message-debug "No dependencies detected")))
 
 (defun emake-compile (&rest options)
   "Compile all files in PACKAGE_LISP.
@@ -445,7 +452,7 @@ Several OPTIONS are available:
       (emake-with-elpa
        (add-to-list 'load-path emake-project-root)
        (dolist (f (emake--clean-list "PACKAGE_LISP"))
-         (emake-task (info (format "compiling %s" f))
+         (emake-task (info (format "Compiling %s" f))
            (byte-compile-file f)
            (when (and byte-compile-error-on-warn
                       (setq compile-buffer (get-buffer byte-compile-log-buffer)))
@@ -453,7 +460,7 @@ Several OPTIONS are available:
              (with-current-buffer compile-buffer
                (goto-char (point-min))
                (when (re-search-forward "^.*:\\(Error\\|Warning\\): .*$" nil t)
-                 (error "there were compile-time errors"))))))))))
+                 (error "There were compile-time errors"))))))))))
 
 (defun emake-help (&optional target)
   "Get help for TARGET or summarize all defined targets.
@@ -466,15 +473,15 @@ with the first line of their documentation string."
   (declare (emake-default-target "help"))
   (if target
       (let ((fn (emake--resolve-target target)))
-        (emake-task (format "help for target `%s' (function %S)" target fn)
+        (emake-task (format "Help for target `%s' (function %S)" target fn)
           (princ (documentation fn))
           (princ "\n"))
-        (emake-task "environment variables used"
+        (emake-task "Environment variables used"
           (emake--env-help fn t))
         (when-let ((fn-help (function-get fn 'emake-help)))
-          (emake-task "target-specific help"
+          (emake-task "Target-specific help"
             (funcall fn-help))))
-    (emake-task "summarizing EMake targets"
+    (emake-task "Summarizing EMake targets"
       (maphash
        (lambda (target fn)
          (princ (format "    %s: %s\n" target (car (split-string (documentation fn) "\n")))))
@@ -530,7 +537,7 @@ TEST-RUNNER."
                                        (emake--get-syms-with-props 'emake-default-test 'emake-test)))))
   (when-let ((test-dependencies (emake--clean-list "PACKAGE_TEST_DEPS")))
     (emake-with-elpa-test
-     (emake-task (info (format "installing test suite dependencies into %s"
+     (emake-task (info (format "Installing test suite dependencies into %s"
                                (file-relative-name package-user-dir)))
        (emake--install (mapcar #'intern test-dependencies)))))
   (let* ((tests (seq-filter (lambda (s)
@@ -538,7 +545,7 @@ TEST-RUNNER."
                                   (string= test-runner (function-get s 'emake-default-test))))
                             (emake--get-syms-with-props 'emake-default-test 'emake-test)))
          (entry (if (<= 2 (length tests))
-                    (error "ambgiuous test-runner %S: %S" test-runner tests)
+                    (error "Ambgiuous test-runner %S: %S" test-runner tests)
                   (car tests))))
     (cond
      (entry
@@ -547,24 +554,24 @@ TEST-RUNNER."
       (setq test-runner (intern test-runner)))
      (t
       (error "%S test-runner not defined" test-runner))))
-  (emake--message-debug "detected test-runner as `%S'" test-runner)
+  (emake--message-debug "Detected test-runner as `%S'" test-runner)
 
   (unless (functionp test-runner)
-    (error "test-runner not defined!"))
+    (error "Test-runner not defined!"))
 
   (emake-with-elpa
    ;; Load any test definitions
    (when-let ((test-files (emake--clean-list "PACKAGE_TESTS")))
      (add-to-list 'load-path emake-project-root)
      (dolist (test-file test-files)
-       (emake-task (debug (format "loading test definitions in %s" test-file))
+       (emake-task (debug (format "Loading test definitions in %s" test-file))
          (unless (file-readable-p test-file)
-           (error "cannot read file: %S" test-file))
+           (error "Cannot read file: %S" test-file))
          ;; load the file with tests
          (load test-file))))
 
    ;; run the tests and exit with an appropriate status
-   (emake-task (info (format "running test `%S'" test-runner))
+   (emake-task (info (format "Running test `%S'" test-runner))
      (let ((command-line-args-left args))
        (funcall test-runner)))))
 
@@ -577,10 +584,10 @@ TEST-RUNNER."
                          (function-get fn 'emake-test)))
             all))
     (pcase-dolist (`(,fn . ,test) (sort all (lambda (a b) (string< (cdr a) (cdr b)))))
-      (emake-task (format "help for test `%s' (function %S)" test fn)
+      (emake-task (format "Help for test `%s' (function %S)" test fn)
         (princ (documentation fn))
         (princ "\n")
-        (emake-task "environment variables used"
+        (emake-task "Environment variables used"
           (emake--env-help fn t))))))
 
 (defun emake--get-syms-with-props (&rest props)
@@ -597,17 +604,17 @@ The environment's value for LIST-ENV is used to simulate
 arguments for a function, FN, that expects them from the command
 line."
   (let ((command-line-args-left (emake--clean-list list-env)))
-    (emake--message-debug "simulating command-line arguments: %S" command-line-args-left)
+    (emake--message-debug "Simulating command-line arguments: %S" command-line-args-left)
     (funcall fn)))
 
 (defun emake--test-helper-ert ()
-  "Runs `ert-run-tests-batch-and-exit'."
+  "Run `ert-run-tests-batch-and-exit'."
   (declare (emake-default-test "ert"))
   (ert-run-tests-batch-and-exit))
 
 (declare-function buttercup-run-discover "ext:buttercup.el" ())
 (defun emake--test-helper-buttercup ()
-  "Runs Buttercup tests with `buttercup-run-discover'."
+  "Run Buttercup test suite with `buttercup-run-discover'."
   (declare (emake-default-test "buttercup"))
   (require 'buttercup)
   (buttercup-run-discover))
@@ -627,13 +634,13 @@ line."
     (ignore-errors
       (kill-buffer guess-checkdoc-error-buffer-name))
     (mapc (lambda (f)
-            (emake-task (info (format "checking %s" f))
+            (emake-task (info (format "Checking %s" f))
               (checkdoc-file f)))
           (emake--clean-list "PACKAGE_LISP"))
     (when-let ((buf (get-buffer guess-checkdoc-error-buffer-name)))
       (with-current-buffer buf
         (unless (= 0 (buffer-size))
-          (error "checkdoc issues detected"))))))
+          (error "Checkdoc issues detected"))))))
 
 (declare-function package-lint-batch-and-exit "ext:package-lint.el")
 (defun emake--test-helper-package-lint ()
