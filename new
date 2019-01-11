@@ -1,0 +1,69 @@
+#!/usr/bin/env sh
+
+if [ -n "${CI}" ]; then
+    printf "This script should not be used on CI\n"
+    exit 1
+fi
+
+if [ -e Makefile ]; then
+    printf "A Makefile already exists! Refusing to clobber\n"
+    exit 1
+fi
+
+# Ensure there's an EMACS_VERSION
+if [ -z "${EMACS_VERSION}" ]; then
+    printf "Please set EMACS_VERSION in your ~/.profile or similar\n"
+    printf "and then re-run this script.\n\n"
+    printf "Example:\n\n"
+    printf "  echo 'EMACS_VERSION=26.1' >> ~/.profile\n\n"
+    printf "You can determine your Emacs version with \`emacs --version'.\n"
+    exit 1
+fi
+
+# Retrieve the package basename
+if [ -z "${PACKAGE_BASENAME}" ]; then
+    read -p "Package basename: " PACKAGE_BASENAME
+    if [ -z "${PACKAGE_BASENAME}" ]; then
+        printf "Quit\n"
+        exit 1
+    fi
+else
+    printf "Using PACKAGE_BASENAME=${PACKAGE_BASENAME}\n"
+fi
+
+# Determine most recent SHA1 and download that Makefile
+printf "Determining latest version of EMake..."
+EMAKE_SHA1=$(curl -fsSL "https://api.github.com/repos/vermiculus/emake.el/git/refs/heads/master" \
+    | grep -oE '"sha"\s*:\s*"([[:alnum:]]+)"' \
+    | cut -d\" -f4)
+EMAKE_SHA1_SHORT=$(echo ${EMAKE_SHA1} | cut -c1-7)
+printf "${EMAKE_SHA1_SHORT}\n"
+printf "Downloading EMake..."
+curl -fsSLO "https://raw.githubusercontent.com/vermiculus/emake.el/${EMAKE_SHA1}/emake.mk"
+printf "done\n"
+
+# Finish up
+printf "Generating Makefile..."
+cat <<EOF > Makefile
+EMAKE_SHA1            ?= ${EMAKE_SHA1}
+PACKAGE_BASENAME      := ${PACKAGE_BASENAME}
+
+PACKAGE_ARCHIVES      := gnu melpa
+PACKAGE_TEST_ARCHIVES := gnu melpa
+
+.DEFAULT_GOAL: help
+
+emake.mk: ## download EMake
+        curl -fsSkL "https://raw.githubusercontent.com/vermiculus/emake.el/\$(EMAKE_SHA1)/emake.mk"
+
+clean: ## clean compiled lisp and EMake files
+	rm -rf ${EMAKE_WORKDIR}
+	rm -f ${PACKAGE_LISP:.el=.elc}
+
+include emake.mk
+EOF
+printf "done\n"
+
+printf "\nYou now have EMake version ${EMAKE_SHA1_SHORT}!\n"
+printf "This is the most recent stable version.\n"
+printf "Run \`make help' to see what you've got!\n"

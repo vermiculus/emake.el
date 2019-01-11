@@ -17,6 +17,21 @@ You may find it advantageous to use Cask and EMake concurrently during
 project development, but I would recommend executing your tests with
 pure EMake to ensure consistency with CI testing.
 
+** Quick Start
+In keeping with recent trends, what follows is a shell script to
+install the most recent version of EMake with minimal configuration.
+#+BEGIN_SRC sh
+bash <(curl -fsSL https://raw.githubusercontent.com/vermiculus/emake.el/master/new)
+#+END_SRC
+
+This does three things:
+1. Read the package's basename interactively.
+2. Determine and download the latest version of EMake.
+3. Pin your EMake version to a newly-generated Makefile.
+The script takes steps not to blow away an existing Makefile.  It also
+avoids running on a CI server -- for this use-case, you should pin
+your EMake version in your CI's configuration file (see /Using EMake/).
+
 ** File Descriptions
 
 - =emake.el= :: This is EMake.  No other file is /necessary/ to run EMake.
