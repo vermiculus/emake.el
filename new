@@ -57,8 +57,8 @@ emake.mk: ## download EMake
         curl -fsSkL "https://raw.githubusercontent.com/vermiculus/emake.el/\$(EMAKE_SHA1)/emake.mk"
 
 clean: ## clean compiled lisp and EMake files
-	rm -rf ${EMAKE_WORKDIR}
-	rm -f ${PACKAGE_LISP:.el=.elc}
+	rm -rf \$(EMAKE_WORKDIR)
+	rm -f \$(PACKAGE_LISP:.el=.elc)
 
 include emake.mk
 EOF
