@@ -106,7 +106,7 @@ See also `emake--resolve-target'."
     ("EMAKE_DEBUG_FLAGS" . "have EMake print debugging information; see source for details")
     ("EMAKE_WORKDIR" . "directory of all files downloaded by Emake")
     ("EMAKE_LOGLEVEL" . "one of DEBUG, INFO, or NONE; controls verbosity of logging")
-    ("PACKAGE_FILE" . "root file of your package")
+    ("PACKAGE_FILE" . "file containing the package definition")
     ("PACKAGE_TESTS" . "space-delimited list of Lisp files to load to define your tests")
     ("PACKAGE_LISP" . "space-delimited list of Lisp files in this package")
     ("PACKAGE_ARCHIVES" . "space-delimited list of named ELPA archives; see also `emake-package-archive-master-alist'")
@@ -221,29 +221,13 @@ EMAKE_LOGLEVEL is one of the following values:
   (when-let ((package-file (emake--getenv "PACKAGE_FILE")))
     (emake-task (debug "Determining package descriptor")
       (or
-       (emake-task (debug "Looking for *-pkg.el file")
-         ;; `package--description-file' is slightly broken in this
-         ;; case.  It relies on the name of directory passed to
-         ;; `package-load-descriptor'.  The directory name is not
-         ;; always reliable, though, for obvious reasons.
-
-         ;; We have some special knowledge about the package provided
-         ;; to us via environment variables; use it to provide an
-         ;; alternative definition for `package--description-file'.
-
-         ;; Ideally this would work everywhere (as it does on my
-         ;; machine), but for some unknown reason, it does not work on
-         ;; Travis.  Instead, we effectively re-implement
-         ;; `package-load-descriptor' below (without the fanciness).
-         '(cl-flet ((package--description-file (_pkg-dir) (concat (file-name-base package-file) "-pkg.el")))
-            (package-load-descriptor (file-name-directory (expand-file-name package-file))))
-         (let ((pkg-file (concat (file-name-base package-file) "-pkg.el")))
-           (when (file-readable-p pkg-file)
-             (package-process-define-package
-              (with-temp-buffer
-                (insert-file-contents pkg-file)
-                (goto-char (point-min))
-                (read (current-buffer)))))))
+       (emake-task (debug "Looking for `define-package' form")
+         (when (file-readable-p package-file)
+           (package-process-define-package
+            (with-temp-buffer
+              (insert-file-contents package-file)
+              (goto-char (point-min))
+              (read (current-buffer))))))
        (progn
          (emake--message-debug "Didn't find a package descriptor")
          (emake-task (debug (format "Parsing headers in %S" package-file))

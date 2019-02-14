@@ -93,7 +93,7 @@ For example:
 EMake itself is driven by a few environment variables:
 - =PACKAGE_FILE= :: This is the Elisp file that contains the definition
                     of your package (e.g., =Author=, =Package-Version=,
-                    =Keywords=, etc.)
+                    =Keywords=, etc.).  This could be a =*-pkg.el= file.
 - =PACKAGE_TESTS= :: This contains a space-delimited list of Elisp files
      to load before running tests.  The files are loaded in the order
      they're provided.
