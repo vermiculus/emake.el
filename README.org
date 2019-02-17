@@ -156,8 +156,43 @@ functionality.
 Invoking =$(EMAKE) install= parses =PACKAGE_FILE= to install all its noted
 dependencies (in the =Package-Requires= header) from =PACKAGE_ARCHIVES=.
 
-You can instruct EMake to ignore calculated dependencies using
-=PACKAGE_IGNORE_DEPS=.
+The standard behavior looks for dependencies in the same parent
+directory that holds your project.  For example, if your project is
+called =this-project= and has dependencies =dependency-1= and
+=dependency-2=, EMake expects your directory structure to look like
+this:
+#+BEGIN_EXAMPLE
+- this-project/
+  - README.org
+  - this-project.el
+- dependency-1/
+  - dependency-1.el
+- dependency-2/
+  - dependency-2.el
+#+END_EXAMPLE
+
+You can override this behavior (e.g., for non-standard packages) by
+prepending to ~emake-package-dev-locations-functions~.  For example, the
+following function finds Magit if it is installed in one of the parent
+directories of the current package:
+#+BEGIN_SRC elisp
+  (defun find-magit (pkg)
+    (when (eq pkg 'magit)
+      (let* ((parent-dir (emake--dir-parent emake-project-root))
+             (default-directory (locate-dominating-file parent-dir "magit"))
+             (dir (expand-file-name "magit")))
+        (when (file-directory-p dir)
+          (cons (expand-file-name "lisp/magit-pkg.el")
+                (expand-file-name "lisp/"))))))
+
+  (push #'find-magit emake-package-dev-locations-functions)
+#+END_SRC
+
+The environment variable =EMAKE_USE_LOCAL= controls how =PACKAGE_ARCHIVES=
+are used to install new dependencies.  The above behavior is the
+default, but two values exist for this variable:
+- =ALWAYS= :: If the dependency cannot be found locally, error out.
+- =NEVER= :: The local machine will not be searched for dependencies.
 
 *** =compile=
 Invoking =$(EMAKE) compile= byte-compiles all files in =PACKAGE_LISP=.

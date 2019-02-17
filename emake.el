@@ -106,14 +106,36 @@ See also `emake--resolve-target'."
     ("EMAKE_DEBUG_FLAGS" . "have EMake print debugging information; see source for details")
     ("EMAKE_WORKDIR" . "directory of all files downloaded by Emake")
     ("EMAKE_LOGLEVEL" . "one of DEBUG, INFO, or NONE; controls verbosity of logging")
+    ("EMAKE_USE_LOCAL" . "controls use of PACKAGE_ARCHIVES: \
+ALWAYS prohibits installation of remote dependencies; \
+NEVER forces install from the archives (i.e., never use local copies); \
+any other value installs from archives when local copies are unavailable")
     ("PACKAGE_FILE" . "file containing the package definition")
     ("PACKAGE_TESTS" . "space-delimited list of Lisp files to load to define your tests")
     ("PACKAGE_LISP" . "space-delimited list of Lisp files in this package")
     ("PACKAGE_ARCHIVES" . "space-delimited list of named ELPA archives; see also `emake-package-archive-master-alist'")
     ("PACKAGE_TEST_DEPS" . "space-delimited list of packages needed by the test suite")
-    ("PACKAGE_IGNORE_DEPS" . "space-delimited list of dependencies to ignore when installing")
     ("PACKAGE_TEST_ARCHIVES" . "space-delimited list of named ELPA archives needed by the test suite; see also `emake-package-archive-master-alist'"))
   "List of environment variables used by EMake targets.")
+
+;;; Utilities
+
+(defun emake--flatten (lst)
+  "Flatten the list LST such that it will contain no sublists."
+  (cond ((null lst) nil)
+        ((listp lst) (append (emake--flatten (car lst))
+                             (emake--flatten (cdr lst))))
+        (t (list lst))))
+
+(cl-defun emake--dir-parent (dir &optional (how-many 1))
+  "Find the parent of DIR.
+With optional parameter HOW-MANY, find the grand-parent (=2) or
+great-grand-parent (=3) or... of DIR."
+  (cl-assert (>= how-many 0))
+  (while (< 0 how-many)
+    (cl-decf how-many)
+    (setq dir (file-name-directory (directory-file-name dir))))
+  dir)
 
 ;;; Dealing with environment variables
 
@@ -217,22 +239,99 @@ EMAKE_LOGLEVEL is one of the following values:
            (progn ,@body)
          (,printer (concat ,Sdescription "done"))))))
 
-;;; Package metadata
+;;; Developer locations
 
-(defun emake-package-desc ()
-  "Package description corresponding to the code in PACKAGE_FILE."
-  (when-let ((package-file (emake--getenv "PACKAGE_FILE")))
-    (cl-assert (file-readable-p package-file))
-    (emake-task (debug "Determining package descriptor")
-      (or
-       (emake-task (debug "Looking for `define-package' form")
-         (emake-package-desc--define-package package-file))
-       (progn
-         (emake--message-debug "Didn't find a package descriptor")
-         (emake-task (debug (format "Parsing headers in %S" package-file))
-           (emake-package-desc--headers package-file)))))))
+(defvar emake-package-dev-locations-functions
+  '(emake-package-dev-locations-default)
+  "Functions to find a package's PACKAGE_FILE and location on disk.
+The package is given as a symbol as the first argument to each
+function in succession and is expected to return a cons of the
+form (PACKAGE_FILE . DIR) or nil.  If a function returns nil, the
+next functions is attempted.  If all functions return nil, the
+package and its dependencies are installed normally.
+
+If any function does not return nil, DIR is added to the
+`load-path' and PACKAGE_FILE is parsed for dependencies.  Note
+that each dependency will then in turned be passed back into this
+function to find its requirements.")
+
+(defun emake-package-dev-locations-default (pkg)
+  "Find PKG as a sibling of this package.
+See `emake-project-root' and
+`emake-package-dev-locations-functions'."
+  (let ((dir-parent (expand-file-name (symbol-name pkg)
+                                      (emake--dir-parent emake-project-root))))
+    (when (file-directory-p dir-parent)
+      (cl-some (lambda (pkg-pattern)
+                 (let ((pkg-file (expand-file-name (format pkg-pattern pkg) dir-parent)))
+                   (when (file-readable-p pkg-file)
+                     (cons pkg-file (file-name-as-directory dir-parent)))))
+               (list "%S-pkg.el" "%S.el")))))
+
+(defun emake--package-dev-location (package)
+  "Determine the location of PACKAGE on this machine.
+If the return value is nil, the package must be installed through
+an ELPA."
+  (declare (emake-environment-variables "EMAKE_USE_LOCAL"))
+  (let* ((local (upcase (or (emake--getenv "EMAKE_USE_LOCAL") "AS_AVAILABLE")))
+         (location (unless (string= local "NEVER")
+                     (cl-some (lambda (pkg-finder)
+                                (when-let ((result (funcall pkg-finder package)))
+                                  (emake--message-debug "Found %S with %S" package pkg-finder)
+                                  result))
+                              emake-package-dev-locations-functions))))
+    (unless location
+      (if (string= local "ALWAYS")
+          (error "Package not found locally: %S" package)
+        (emake--message-debug "Package not found locally and will use archives: %S" package)))
+    location))
+
+;;; Dependencies
+
+(defun emake-package-reqs ()
+  "Non-emacs dependencies of PACKAGE_FILE."
+  (when-let ((reqs (emake-package-reqs--recursive (emake--getenv "PACKAGE_FILE"))))
+    (let (with-load-path)
+      (dolist (pkg reqs)
+        (when-let ((pair (emake--package-dev-location pkg)))
+          (cl-pushnew (cons pkg (cdr pair)) with-load-path)))
+      (cons reqs with-load-path))))
+
+(defun emake-package-reqs--recursive (root-package-file)
+  "For ROOT-PACKAGE-FILE, find all dependencies.
+This includes dependencies of dependencies for dependencies whose
+dependencies are known.
+
+Yes, that *was* fun to write :-)
+
+In layman's terms: if we are developing a dependency elsewhere on
+this machine and it's detectable by one of the functions used by
+`emake--package-dev-location', then the dependencies of that
+dependency are added so that all dependencies are still met."
+  (let ((deps (emake-package-reqs--single root-package-file)))
+    (cl-delete-duplicates
+     (emake--flatten
+      (mapcar (lambda (d)
+                (cons d (when-let ((d-file (car-safe (emake--package-dev-location d))))
+                          (emake-package-reqs--recursive d-file))))
+              (delq 'emacs deps))))))
+
+(defun emake-package-reqs--single (package-file)
+  "Get the direct dependencies of PACKAGE-FILE."
+  (mapcar #'car
+          (if-let ((desc (or (emake-package-desc--define-package package-file)
+                             (ignore-errors
+                               ;; this will fail if the file does not have a Version header
+                               (emake-package-desc--headers package-file)))))
+              (package-desc-reqs desc)
+            (require 'lisp-mnt)
+            (with-temp-buffer
+              (insert-file-contents-literally package-file)
+              (package--prepare-dependencies
+               (package-read-from-string (lm-header "package-requires")))))))
 
 (defun emake-package-desc--define-package (package-file)
+  "Get a `package-desc' from PACKAGE-FILE using `define-package'."
   (package-process-define-package
    (with-temp-buffer
      (insert-file-contents package-file)
@@ -240,23 +339,19 @@ EMAKE_LOGLEVEL is one of the following values:
      (read (current-buffer)))))
 
 (defun emake-package-desc--headers (package-file)
+  "Get a `package-desc' from PACKAGE-FILE using headers."
   (with-temp-buffer
     (insert-file-contents-literally package-file)
     (package-buffer-info)))
 
-
-(defun emake-package-reqs ()
-  "Non-emacs dependencies of PACKAGE_FILE."
-  (when-let ((desc (emake-package-desc)))
-    (cl-remove-if (lambda (x) (eq (car x) 'emacs))
-                  (package-desc-reqs desc))))
-
 (defvar emake-project-root
   (when-let ((package-file (emake--getenv "PACKAGE_FILE")))
-    (when (file-readable-p package-file)
-      (locate-dominating-file (or (file-name-directory package-file)
-                                  default-directory)
-                              package-file)))
+    (let ((root (locate-dominating-file (or (file-name-directory package-file)
+                                            default-directory)
+                                        package-file)))
+      (push (cons "PACKAGE_FILE" (expand-file-name package-file root))
+            emake--env-cache)
+      root))
   "The folder `PACKAGE_FILE' is in.")
 
 ;;; Installing dependencies
@@ -286,6 +381,9 @@ is the executable body of the macro."
                                           emake-package-archive-master-alist)))
        (emake-task (debug "Initializing package.el")
          (package-initialize))
+       (dolist (pair (cdr (emake-package-reqs)))
+         (emake--message-info "Using dependency `%S' at %s" (car pair) (cdr pair))
+         (add-to-list 'load-path (cdr pair)))
        ,@body)))
 
 (defmacro emake-with-elpa (&rest body)
@@ -325,13 +423,22 @@ ARCHIVES is a list of archives like `package-archives'."
         (let ((package-archives empty-archives))
           (package-refresh-contents))))))
 
-(defun emake--install (packages)
-  "Ensure each package in PACKAGES is installed."
+(defun emake--install (dependencies-spec)
+  "Ensure each package in DEPENDENCIES-SPEC is installed.
+DEPENDENCIES-SPEC is a list of the form
+
+  \(ALL-DEPS DEV-DEP-SPEC DEV-DEP-SPEC...)
+
+where each DEV-DEP-SPEC is a cons of the package-symbol and the
+directory to be added to `load-path'."
   (emake--package-download-archives package-archives)
-  (dolist (package packages)
-    (unless (package-installed-p package)
-      (emake-task (info (format "Installing %S" package))
-        (package-install package)))))
+  (dolist (dep (car dependencies-spec))
+    (if-let ((entry (assq dep (cdr dependencies-spec))))
+        (emake--message-debug "Skipping dev package: %S" entry)
+      (if (package-installed-p dep)
+          (emake--message-debug "Already installed: %S" dep)
+        (emake-task (info (format "Installing %S" dep))
+          (package-install dep))))))
 
 ;;; Running targets
 
@@ -419,17 +526,15 @@ TRUE-VALUE during execution of BODY."
 Required packages include those that `PACKAGE_FILE' lists as
 dependencies."
   (declare (emake-environment-variables
-            "PACKAGE_IGNORE_DEPS"
             ("PACKAGE_ARCHIVES" . "used to install dependencies")
             ("PACKAGE_FILE" . "parsed to determine dependencies"))
            (emake-default-target "install"))
   (if-let ((reqs (emake-package-reqs)))
       (emake-with-elpa
        (emake-task (info (format "Installing in %s" (file-relative-name package-user-dir)))
-         ;; install dependencies
-         (emake--install
-          (let ((ignored-reqs (mapcar #'intern (emake--clean-list "PACKAGE_IGNORE_DEPS"))))
-            (mapcar #'car (cl-remove-if (lambda (p) (memq p ignored-reqs)) reqs))))))
+         (emake--message-debug "Dependencies: %S" reqs)
+         (emake--message-debug "Development package locations functions: %S" emake-package-dev-locations-functions)
+         (emake--install reqs)))
     (emake--message-debug "No dependencies detected")))
 
 (defun emake-compile (&rest options)
@@ -534,7 +639,7 @@ TEST-RUNNER."
     (emake-with-elpa-test
      (emake-task (info (format "Installing test suite dependencies into %s"
                                (file-relative-name package-user-dir)))
-       (emake--install (mapcar #'intern test-dependencies)))))
+       (emake--install (list (mapcar #'intern test-dependencies))))))
   (let* ((tests (seq-filter (lambda (s)
                               (or (string= test-runner (function-get s 'emake-test))
                                   (string= test-runner (function-get s 'emake-default-test))))
