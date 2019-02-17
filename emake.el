@@ -364,7 +364,9 @@ ARCHIVES is a list of archives like `package-archives'."
 
 The executed function is emake-my-TARGET if bound, else emake-TARGET."
   (let ((fun (emake--resolve-target target))
-        (debug-on-error (member "debug" emake--debug-flags)))
+        (debug-on-error
+         ;; this variable must eq t
+         (and (member "debug" emake--debug-flags) t)))
     (emake-task (info (format (if command-line-args-left
                                   "Running target %S with function `%S' with arguments %S"
                                 "Running target %S with function `%S'")
