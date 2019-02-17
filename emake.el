@@ -222,22 +222,28 @@ EMAKE_LOGLEVEL is one of the following values:
 (defun emake-package-desc ()
   "Package description corresponding to the code in PACKAGE_FILE."
   (when-let ((package-file (emake--getenv "PACKAGE_FILE")))
+    (cl-assert (file-readable-p package-file))
     (emake-task (debug "Determining package descriptor")
       (or
        (emake-task (debug "Looking for `define-package' form")
-         (when (file-readable-p package-file)
-           (package-process-define-package
-            (with-temp-buffer
-              (insert-file-contents package-file)
-              (goto-char (point-min))
-              (read (current-buffer))))))
+         (emake-package-desc--define-package package-file))
        (progn
          (emake--message-debug "Didn't find a package descriptor")
          (emake-task (debug (format "Parsing headers in %S" package-file))
-           (when (file-readable-p package-file)
-             (with-temp-buffer
-               (insert-file-contents-literally package-file)
-               (package-buffer-info)))))))))
+           (emake-package-desc--headers package-file)))))))
+
+(defun emake-package-desc--define-package (package-file)
+  (package-process-define-package
+   (with-temp-buffer
+     (insert-file-contents package-file)
+     (goto-char (point-min))
+     (read (current-buffer)))))
+
+(defun emake-package-desc--headers (package-file)
+  (with-temp-buffer
+    (insert-file-contents-literally package-file)
+    (package-buffer-info)))
+
 
 (defun emake-package-reqs ()
   "Non-emacs dependencies of PACKAGE_FILE."
