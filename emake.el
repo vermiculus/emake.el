@@ -562,6 +562,14 @@ Several OPTIONS are available:
                (when (re-search-forward "^.*:\\(Error\\|Warning\\): .*$" nil t)
                  (error "There were compile-time errors"))))))))))
 
+(defun emake-setup-load-path ()
+  "Load the testing environment.
+This is intended to be run without the `--batch' invocation flag."
+  (declare (emake-default-target "setup-load-path"))
+  (emake-with-elpa
+   ;; `emake-with-elpa' ensures that `load-path' is setup correctly.
+   (ignore)))
+
 (defun emake-help (&optional target)
   "Get help for TARGET or summarize all defined targets.
 Uses the documentation string to get help for an EMake target.

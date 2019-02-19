@@ -213,6 +213,11 @@ targets by running =$(EMAKE) help test=.  If your favorite framework
 isn't built-in yet, don't worry!  You can define your own very easily
 as described below in /Extending Emake/.
 
+*** =setup-load-path=
+Incoking =$(EMAKE) setup-load-path= will start Emacs with =load-path=
+configured as it would be during testing.  This is particularly useful
+when you leave =--batch= out of the invocation.
+
 *** =help=
 Shows documentation for all Makefile targets.
 *** =help-*=
