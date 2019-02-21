@@ -162,7 +162,7 @@ Used in companion file `emake.mk'."
 Argument FORMAT is a format string.  Optional argument ARGS is a
 list of arguments for that format string."
   (let ((s (apply #'format format args)))
-    (princ (concat "\033[0;37memake:\033[0m" s "\n"))
+    (princ (concat (if noninteractive "\033[0;37memake:\033[0m" "emake:") s "\n"))
     s))
 (defun emake--message (format &rest args)
   "Print a message to standard out.
@@ -187,7 +187,10 @@ EMAKE_LOGLEVEL is one of the following values:
 - %s" (string-join values "\n- "))
        (when-let ((,Sloglevel (emake--getenv "EMAKE_LOGLEVEL")))
          (when (member (upcase ,Sloglevel) ',values)
-           (apply #'emake--message-internal (format "\033[32m%s:\033[0m %s" ,tag format) args))))))
+           (apply #'emake--message-internal
+                  (format (if noninteractive "\033[32m%s:\033[0m %s" "%s: %s")
+                          ,tag format)
+                  args))))))
 (emake--message-loglevel emake--message-debug "DEBUG" "DEBUG")
 (emake--message-loglevel emake--message-info  "INFO"  "DEBUG" "INFO")
 
