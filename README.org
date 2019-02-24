@@ -125,6 +125,38 @@ new testing frameworks.  It's just Elisp -- no funny business!
 To provide extra information, you can use =EMAKE_DEBUG_FLAGS=, which
 see.
 
+** Installing Emacs on CI
+There are several solutions for this problem already, each with their
+own potential pitfalls that you should weigh before making a decision:
+- [[https://github.com/flycheck/emacs-travis][emacs-travis.mk]] :: This utility can install a number of tools: there
+     are targets for Emacs, Texinfo, and Cask.  In addition to
+     'normal' Emacs releases, it also supports installing
+     pre-releases.  However, it is not currently actively maintained.
+- [[https://github.com/rejeep/evm][EVM]] :: EVM, or the Emacs Version Manager, is a utility that hopes to
+     be what RVM is in the Ruby world -- a means to seamlessly switch
+     between Emacs versions.  It uses pre-compiled binaries to speed
+     up the process, but be warned: it does not currently support
+     custom =./configure= options (notably, modules are not supported).
+     Still, it can be a good option if your CI does not support
+     caching and you have no means of effecting this yourself.
+
+To handle what I believe to be the vast majority of cases, though, a
+simple, configurable script has been developed in =./install-emacs=.  It
+uses environment variable =EMACS_VERSION= to determine which Emacs
+version to install (either an official release or a snapshot from the
+Git repository) and =EMACS_INSTALL_DESTINATION= to choose the
+installation directory.  See the script header for more details and
+configuration options.
+
+To use it, simply provide to your CI the following pre-install step:
+#+BEGIN_SRC sh
+bash -e <(curl -fsSkL https://raw.githubusercontent.com/vermiculus/emake.el/${EMAKE_SHA}/install-emacs)
+#+END_SRC
+
+Note that your CI must export the =CI= environment variable to a
+non-null value in order for the script to function.  This is a
+protective measure to avoid corrupting a local installation.
+
 ** EMake.mk
 Since most package development is pretty similar across projects,
 EMake includes in its distribution a file called =emake.mk=.  By
