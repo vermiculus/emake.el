@@ -141,21 +141,75 @@ own potential pitfalls that you should weigh before making a decision:
      caching and you have no means of effecting this yourself.
 
 To handle what I believe to be the vast majority of cases, though, a
-simple, configurable script has been developed in =./install-emacs=.  It
-uses environment variable =EMACS_VERSION= to determine which Emacs
-version to install (either an official release or a snapshot from the
-Git repository) and =EMACS_INSTALL_DESTINATION= to choose the
-installation directory.  See the script header for more details and
-configuration options.
+simple, configurable script has been developed in =./install-emacs=.
+Like EMake, it is driven by environment variables:
+- =EMACS_VERSION= :: The =MAJOR.MINOR= version of Emacs to install.  If
+     the special value =snapshot= is used, Emacs is cloned from Git.
+- =EMACS_DIR= :: The directory in which to build Emacs.
+- =EMACS_CONFIGURE_ARGS= :: These arguments are given to =./configure=
+     before building Emacs.  The default value (see implementation)
+     creates a minimal configuration for quick compilation that should
+     be suitable for most testing.
+- =EMACS_GIT_URL= :: The URL given to =git-clone= to copy down the latest
+     Emacs development snapshot (master branch) when =EMACS_VERSION= is
+     =snapshot=.  The default is Savannah.  If you are especially
+     concerned with performance for snapshot builds, you may wish to
+     use the mirror on GitHub -- it is often reported as faster to
+     download: <https://github.com/emacs-mirror/emacs.git>.
+Note that this script does /not/ install Emacs -- it only builds it in
+=EMACS_DIR=.  This script supports both Linux and macOS builds and,
+while the build process is the same between the two (aside from a few
+necessary configuration options), the installation pattern is fairly
+different.  So to keep things simple, the installation is skipped.
+This also speeds up the pre-test steps by about thirty seconds on
+average.
 
 To use it, simply provide to your CI the following pre-install step:
 #+BEGIN_SRC sh
-bash -e <(curl -fsSkL https://raw.githubusercontent.com/vermiculus/emake.el/${EMAKE_SHA}/install-emacs)
+  bash -e <(curl -fsSkL https://raw.githubusercontent.com/vermiculus/emake.el/${EMAKE_SHA}/install-emacs)
 #+END_SRC
+and make sure the following environment variables have values when it
+is run:
+#+BEGIN_SRC sh
+  EMACS_VERSION="26.1"
+  EMACS_DIR="/path/for/emacs/build"
+#+END_SRC
+then make sure to call =emacs= as =${EMACS_DIR}/src/emacs= (as this is
+where Emacs is dumped by the build).  On Travis CI, I recommend
+setting =EMACS_DIR=$HOME/emacs= and caching this directory.
 
 Note that your CI must export the =CI= environment variable to a
 non-null value in order for the script to function.  This is a
 protective measure to avoid corrupting a local installation.
+
+*** macOS
+While this script works out-of-the-box for Linux, there are a few
+steps you should take when building on macOS.  In the =example=
+submodule, I use the Makefile to effect these special changes.  Since
+I use Travis CI, I have guaranteed ways to determine which operating
+system the build is running under.  There is currently no known way
+for the general =install-emacs= script to handle this, but the manual
+handling honestly isn't too bad.
+
+I add this to =.travis.yml= to make sure the following packages are
+up-to-date using Homebrew:
+#+BEGIN_SRC yaml
+addons:
+  homebrew:
+    packages:
+      - autoconf
+      - automake
+      - gnutls
+      - texinfo
+#+END_SRC
+and I add this to the Makefile:
+#+BEGIN_SRC makefile
+  ifeq ($(TRAVIS_OS_NAME),osx)
+  export EMACS_CONFIGURE_ARGS := --with-ns --with-modules
+  endif
+#+END_SRC
+since Emacs does not support building without a GUI toolkit under
+macOS.
 
 ** EMake.mk
 Since most package development is pretty similar across projects,
