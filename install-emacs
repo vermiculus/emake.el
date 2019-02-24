@@ -1,0 +1,86 @@
+#!/bin/bash
+
+# `install-emacs'
+# --------------------------------------------------------------------
+# This script install Emacs 25+ on CI systems from official sources.
+#
+# It is controlled by several environment variables:
+#
+# - EMACS_VERSION :: The MAJOR.MINOR version of Emacs to install.  If
+#     the special value "snapshot" is used, Emacs is cloned from Git.
+#
+# - EMACS_INSTALL_DESTINATION :: The directory in which to install
+#     Emacs.  It is passed to `./configure' as the `--prefix' when
+#     using the default value for EMACS_CONFIGURE_ARGS.
+#
+# - EMACS_CONFIGURE_ARGS :: These arguments are given to `./configure'
+#     before building Emacs.  The default value (see implementation)
+#     creates a minimal configuration for quick compilation that
+#     should be suitable for most testing.
+#
+# - EMACS_GIT_URL :: The URL given to `git-clone' to copy down the
+#     latest Emacs development snapshot (master branch) when
+#     EMACS_VERSION is "snapshot".  If you are especially concerned
+#     with performance for snapshot builds, you may wish to use the
+#     mirror on GitHub -- it is often reported as faster to download:
+#     <https://github.com/emacs-mirror/emacs.git>.
+
+if [ -z "${CI}" ]; then
+    printf "This script should not be used locally\n"
+    exit 1
+fi
+
+if [ -z "${EMACS_VERSION}" ]; then
+    printf "EMACS_VERSION not set\n"
+    exit 1
+fi
+
+if [ -z "${EMACS_INSTALL_DESTINATION}" ]; then
+    printf "EMACS_INSTALL_DESTINATION not set\n"
+    exit 1
+fi
+
+# at this point, it is assumed we will succeed
+export PATH="${EMACS_INSTALL_DESTINATION}/bin:${PATH}"
+
+# do not respect cache for snapshot builds,
+if [ "${EMACS_VERSION}" != "snapshot" ]; then
+    # but make sure to abort if Emacs has already been created
+    if [ -e ${EMACS_INSTALL_DESTINATION}/bin/emacs ]; then
+        printf "Emacs found at ${EMACS_INSTALL_DESTINATION}/bin/emacs; abort\n"
+        exit 0
+    fi
+fi
+
+# provide default configuration flags
+if [ -z "${EMACS_CONFIGURE_ARGS}" ]; then
+    EMACS_CONFIGURE_ARGS="--prefix=${EMACS_INSTALL_DESTINATION} --with-x-toolkit=no --without-x --without-all --with-xml2 --with-modules"
+fi
+
+pushd . >/dev/null
+
+DIR_NAME="/tmp/emacs-${EMACS_VERSION}"
+
+mkdir -p ${DIR_NAME}
+mkdir -p ${EMACS_INSTALL_DESTINATION}
+
+cd ${DIR_NAME}
+
+if [ "${EMACS_VERSION}" == "snapshot" ]; then
+    # https://git.savannah.gnu.org/git/emacs.git
+    # https://github.com/emacs-mirror/emacs.git
+
+    git clone --depth=1 "${EMACS_GIT_URL:-https://git.savannah.gnu.org/git/emacs.git}" "${DIR_NAME}"
+    ./autogen.sh
+else
+    TAR_NAME="emacs-${EMACS_VERSION}.tar.xz"
+    curl -o "/tmp/${TAR_NAME}" "https://ftp.gnu.org/gnu/emacs/${TAR_NAME}"
+    tar xf "/tmp/${TAR_NAME}" -C /tmp
+fi
+
+./configure ${EMACS_CONFIGURE_ARGS}
+${MAKE:-make} && sudo ${MAKE:-make} install
+
+popd >/dev/null
+
+exit 0

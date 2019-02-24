@@ -17,8 +17,11 @@ env:
   - EMACS_VERSION=25.3
   - EMACS_VERSION=26.1
   - EMACS_VERSION=snapshot
+  global:
+  - EMACS_INSTALL_DESTINATION="$HOME/emacs"
+  - EMACS="$HOME/emacs/bin/emacs"
 before_install:
-- make emacs
+- bash -e <(curl -fsSkL https://raw.githubusercontent.com/vermiculus/emake.el/test-install/install-emacs)
 install:
 - make install
 script:
