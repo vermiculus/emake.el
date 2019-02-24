@@ -25,7 +25,7 @@ pushd . >/dev/null
 if [ "${EMACS_VERSION}" == "snapshot" ]; then
     # https://git.savannah.gnu.org/git/emacs.git
     # https://github.com/emacs-mirror/emacs.git
-    rm -rf "{$EMACS_DIR}"
+    rm -rf "${EMACS_DIR}"
     git clone --depth=1 "${EMACS_GIT_URL:-https://git.savannah.gnu.org/git/emacs.git}" "${EMACS_DIR}"
     cd "${EMACS_DIR}"
     ./autogen.sh
