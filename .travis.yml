@@ -21,7 +21,7 @@ env:
   - EMACS_INSTALL_DESTINATION="$HOME/emacs"
   - EMACS="$HOME/emacs/bin/emacs"
 before_install:
-- bash -e <(curl -fsSkL https://raw.githubusercontent.com/vermiculus/emake.el/test-install/install-emacs)
+- bash -e <(curl -fsSkL https://raw.githubusercontent.com/vermiculus/emake.el/6c48e69a09a8d1711ee63f7ab289e53b1e6c5198/install-emacs)
 install:
 - make install
 script:
