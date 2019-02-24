@@ -66,7 +66,7 @@ variable to test MELPA-Stable separate from MELPA in your testing
 matrix?  Just configure an environment variable in the matrix itself
 (or use any of Make's facilities for more complicated logic).  Want to
 use an external testing framework?  Just write a function in Elisp
-with a simple =declare= form.
+with a simple =declare= form to indicate it as a command-line handler.
 
 #+BEGIN_QUOTE
 Anything you want to -- do it.
