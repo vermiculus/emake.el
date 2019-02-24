@@ -78,6 +78,7 @@ else
     tar xf "/tmp/${TAR_NAME}" -C /tmp
 fi
 
+echo ./configure ${EMACS_CONFIGURE_ARGS}
 ./configure ${EMACS_CONFIGURE_ARGS}
 ${MAKE:-make} -j4 && sudo ${MAKE:-make} install
 
