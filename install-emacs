@@ -79,7 +79,7 @@ else
 fi
 
 ./configure ${EMACS_CONFIGURE_ARGS}
-${MAKE:-make} && sudo ${MAKE:-make} install
+${MAKE:-make} -j4 && sudo ${MAKE:-make} install
 
 popd >/dev/null
 
