@@ -1,5 +1,12 @@
 #+Title: Emacs-Make [[https://travis-ci.org/vermiculus/emake.el][https://travis-ci.org/vermiculus/emake.el.svg?branch=master]]
 
+#+BEGIN_HTML
+<img align="right"
+     src="https://user-images.githubusercontent.com/2082195/53315207-b29ec200-3887-11e9-93be-8a4d0b2decbe.png"
+     width="50%"
+     alt="Passing tests on Travis"/>
+#+END_HTML
+
 Test Elisp with services like Travis CI without the fuss of Cask --
 just you, your project, and (Emacs-)Make.  Designed to be used with
 GNU Make, EMake comes with no dependencies other than Emacs 25.
@@ -8,14 +15,16 @@ Things EMake does:
 - parses, installs, and runs tests for your package
 - provides all the power of Elisp to extend its capabilities on-demand
 
-Things EMake will never do (or 'reasons you may still need Cask'):
-- manage your development environment or provide tools to do so
-- provide '[[https://bundler.io][bundler]]-like' =exec= abilities (this includes Cask's =emacs=
-  and =eval= commands)
+EMake will never introduce dependencies beyond Emacs.
 
-You may find it advantageous to use Cask and EMake concurrently during
-project development, but I would recommend executing your tests with
-pure EMake to ensure consistency with CI testing.
+Depending on your prefereces, you may find it advantageous to use Cask
+and EMake concurrently during project development, but I would
+recommend executing your tests with pure EMake to ensure consistency
+with CI testing.
+
+This README will walk you through how to start using EMake for your
+project and will get you up and running with the appropriate version
+of Emacs installed on your favorite CI provider.
 
 ** Quick Start
 In keeping with recent trends, what follows is a shell script to
