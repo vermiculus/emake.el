@@ -41,6 +41,8 @@ your EMake version in your CI's configuration file (see /Using EMake/).
                 about project setup that should be accurate for most
                 projects.  See the section dedicated to this file near
                 the end of this documentation.
+- =install-emacs= :: This is a shell script that can build a minimal
+     Emacs on Linux and macOS.
 - =example/= :: This is an example project demonstrating the typical use
                 of EMake.
 

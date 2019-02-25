@@ -43,7 +43,7 @@ else
     cd "${PARENT}"
     tar xf "${HOME}/${TAR_NAME}"
     mv "emacs-${EMACS_VERSION}" "${EMACS_DIR##*/}"
-    cd "${EMACS_DIR##*/}"
+    cd "${EMACS_DIR}"
 fi
 
 # provide default configuration flags
