@@ -255,6 +255,18 @@ If any function does not return nil, DIR is added to the
 that each dependency will then in turned be passed back into this
 function to find its requirements.")
 
+(defvar emake-package-file-subdirectories
+  '((magit . "lisp")
+    (transient . "lisp"))
+  "An alist to determine the locatio of PKG-FILE.
+Where will you find PKG-FILE for a given package?  This is an
+alist from package-symbols to the directory (relative to the root
+directory of the package) where the PKG-pkg.el or PKG.el file may
+be located.  In essence, it answers the question 'Where will you
+find PKG-FILE for a given package?'
+
+This structure is used by `emake-package-dev-locations-default'.")
+
 (defun emake-package-dev-locations-default (pkg)
   "Find PKG as a sibling of this package.
 See `emake-project-root' and
@@ -262,11 +274,14 @@ See `emake-project-root' and
   (let ((dir-parent (expand-file-name (symbol-name pkg)
                                       (emake--dir-parent emake-project-root))))
     (when (file-directory-p dir-parent)
-      (cl-some (lambda (pkg-pattern)
-                 (let ((pkg-file (expand-file-name (format pkg-pattern pkg) dir-parent)))
-                   (when (file-readable-p pkg-file)
-                     (cons pkg-file (file-name-as-directory dir-parent)))))
-               (list "%S-pkg.el" "%S.el")))))
+      (let ((pkg-file-dir (if-let ((entry (assoc pkg emake-package-file-subdirectories)))
+                              (expand-file-name (cdr entry) dir-parent)
+                            dir-parent)))
+        (cl-some (lambda (pkg-pattern)
+                   (let ((pkg-file (expand-file-name (format pkg-pattern pkg) pkg-file-dir)))
+                     (when (file-readable-p pkg-file)
+                       (cons pkg-file (file-name-as-directory dir-parent)))))
+                 (list "%S-pkg.el" "%S.el"))))))
 
 (defun emake--package-dev-location (package)
   "Determine the location of PACKAGE on this machine.
