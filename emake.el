@@ -574,6 +574,32 @@ This is intended to be run without the `--batch' invocation flag."
    ;; `emake-with-elpa' ensures that `load-path' is setup correctly.
    (ignore)))
 
+(defun emake-autoloads ()
+  "Generate autoloads in `emake-project-root'.
+Uses `package-generate-autoloads' internally after determining
+appropriate arguments to that function.."
+  (declare (emake-default-target "autoloads")
+           (emake-environment-variables "PACKAGE_FILE"
+                                        "PACKAGE_LISP"))
+  (let* ((pkg-file (emake--getenv "PACKAGE_FILE"))
+         (desc (emake-package-desc pkg-file))
+         (pkg-dir (expand-file-name
+                   (or (ignore-errors (file-name-directory
+                                       (car (emake--clean-list "PACKAGE_LISP"))))
+                       emake-project-root)))
+         (name (if desc
+                   (symbol-name (package-desc-name desc))
+                 (string-remove-suffix "-pkg" (file-name-base pkg-file))))
+         (relative-path (string-remove-prefix
+                         (expand-file-name emake-project-root)
+                         (expand-file-name pkg-dir))))
+    (unless desc
+      (emake--message-info "Guessed package name: %S" name))
+    (emake-task (info (if (string= relative-path "")
+                          (format "Generating autoloads for %S" name)
+                        (format "Generating autoloads for %S in %S" name relative-path)))
+      (package-generate-autoloads name pkg-dir))))
+
 (defun emake-help (&optional target)
   "Get help for TARGET or summarize all defined targets.
 Uses the documentation string to get help for an EMake target.

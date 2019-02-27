@@ -81,6 +81,8 @@ emake-help: emake ## summarize all targets defined by EMake
 help-%: emake ## show help for EMake target '%'
 	$(EMAKE) help $*
 
+autoloads: emake ## generate autoloads file
+	$(EMAKE) autoloads
 
 ## Commands useful for Travis
 
