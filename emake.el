@@ -319,16 +319,20 @@ dependency are added so that all dependencies are still met."
 (defun emake-package-reqs--single (package-file)
   "Get the direct dependencies of PACKAGE-FILE."
   (mapcar #'car
-          (if-let ((desc (or (emake-package-desc--define-package package-file)
-                             (ignore-errors
-                               ;; this will fail if the file does not have a Version header
-                               (emake-package-desc--headers package-file)))))
+          (if-let ((desc (emake-package-desc package-file)))
               (package-desc-reqs desc)
             (require 'lisp-mnt)
             (with-temp-buffer
               (insert-file-contents-literally package-file)
               (package--prepare-dependencies
                (package-read-from-string (lm-header "package-requires")))))))
+
+(defun emake-package-desc (package-file)
+  "Get a `package-desc' object from PACKAGE-FILE if possible."
+  (or (emake-package-desc--define-package package-file)
+      (ignore-errors
+        ;; this will fail if the file does not have a Version header
+        (emake-package-desc--headers package-file))))
 
 (defun emake-package-desc--define-package (package-file)
   "Get a `package-desc' from PACKAGE-FILE using `define-package'."
