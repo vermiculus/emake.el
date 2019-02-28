@@ -167,17 +167,21 @@ debug:
   set `debug-on-error' when running targets.")
 
 (defun emake-verify-version ()
-  "Signals an error unless the correct version of Emacs is being used.
+  "Determines if the correct version of Emacs is being used.
 Compares the MAJOR.MINOR versions of variable `emacs-version' to
-the EMACS_VERSION environment variable.
-
-Used in companion file `emake.mk'."
+the EMACS_VERSION environment variable."
   (declare (emake-environment-variables "EMACS_VERSION"))
-  (let ((major-minor (and (string-match (rx (+ digit) ?. (+ digit))
-                                        emacs-version)
-                          (match-string 0 emacs-version))))
-    (unless (version= major-minor (string-trim (emake--getenv "EMACS_VERSION")))
-      (error "Wrong version"))))
+  (emake-task (info "Verifying Emacs version")
+    (let* ((major-minor (and (string-match (rx (+ digit) ?. (+ digit))
+                                           emacs-version)
+                             (match-string 0 emacs-version)))
+           (match (version= major-minor (string-trim (emake--getenv "EMACS_VERSION")))))
+      (if match
+          (emake--message-info "Emacs version %S verified" (emake--getenv "EMACS_VERSION"))
+        (emake--message-info "Emacs version %S expected; but this `emacs-version' is %S"
+                             (emake--getenv "EMACS_VERSION")
+                             emacs-version))
+      match)))
 
 (defun emake--message-internal (format &rest args)
   "Print a message to standard out.
@@ -502,6 +506,7 @@ The executed function is emake-my-TARGET if bound, else emake-TARGET."
         (debug-on-error
          ;; this variable must eq t
          (and (member "debug" emake--debug-flags) t)))
+    (cl-assert (emake-verify-version))
     (emake-task (info (format (if command-line-args-left
                                   "Running target %S with function `%S' with arguments %S"
                                 "Running target %S with function `%S'")

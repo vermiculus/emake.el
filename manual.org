@@ -109,6 +109,11 @@ that's failing) while you sort out the problem -- this will give
 faster response times.
 
 * Using EMake
+You must set =EMACS_VERSION= to the appropriate =MAJOR.MINOR= version of
+Emacs you're using to run EMake.  Since different versions of Emacs
+can be have differently in subtle ways, the actual version of Emacs is
+verified against this environment variable before running any target.
+
 EMake itself is driven by a few environment variables:
 - =PACKAGE_FILE= :: This is the Elisp file that contains the definition
                     of your package (e.g., =Author=, =Package-Version=,
@@ -275,7 +280,6 @@ This target uses the following environment variables:
 
 emake: Documentation of compile (function emake-compile)...done
 #+END_EXAMPLE
-
 
 * Extending EMake
 ** New Targets
