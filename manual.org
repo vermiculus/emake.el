@@ -1,0 +1,308 @@
+#+Title: EMake Manual
+#+Author: Sean Allred
+
+* Introduction
+
+In all testing, I recommend specifying the commit you want to use to
+prevent issues with builds broken by upstream changes.  If a certain
+version works for you, there is no added value to receiving further
+updates until you specifically want them.  /It may be dangerous to use
+=master=!/ While it should always be stable, it may introduce
+backwards-incompatible changes.
+
+* Installing Emacs on CI
+There are several solutions for this problem already, each with their
+own potential pitfalls that you should weigh before making a decision:
+- [[https://github.com/flycheck/emacs-travis][emacs-travis.mk]] :: This utility can install a number of tools: there
+     are targets for Emacs, Texinfo, and Cask.  In addition to
+     'normal' Emacs releases, it also supports installing
+     pre-releases.  However, it is not currently actively maintained.
+- [[https://github.com/rejeep/evm][EVM]] :: EVM, or the Emacs Version Manager, is a utility that hopes to
+     be what RVM is in the Ruby world -- a means to seamlessly switch
+     between Emacs versions.  It uses pre-compiled binaries to speed
+     up the process, but be warned: it does not currently support
+     custom =./configure= options (notably, modules are not supported).
+     Still, it can be a good option if your CI does not support
+     caching and you have no means of effecting this yourself.
+
+To handle what I believe to be the vast majority of cases, though, a
+simple, configurable script has been developed in =./install-emacs=.
+Like EMake, it is driven by environment variables:
+- =EMACS_VERSION= :: The =MAJOR.MINOR= version of Emacs to install.  If
+     the special value =snapshot= is used, Emacs is cloned from Git.
+- =EMACS_DIR= :: The directory in which to build Emacs.
+- =EMACS_CONFIGURE_ARGS= :: These arguments are given to =./configure=
+     before building Emacs.  The default value (see implementation)
+     creates a minimal configuration for quick compilation that should
+     be suitable for most testing.
+- =EMACS_GIT_URL= :: The URL given to =git-clone= to copy down the latest
+     Emacs development snapshot (master branch) when =EMACS_VERSION= is
+     =snapshot=.  The default is Savannah.  If you are especially
+     concerned with performance for snapshot builds, you may wish to
+     use the mirror on GitHub -- it is often reported as faster to
+     download: <https://github.com/emacs-mirror/emacs.git>.
+Note that this script does /not/ install Emacs -- it only builds it in
+=EMACS_DIR=.  This script supports both Linux and macOS builds and,
+while the build process is the same between the two (aside from a few
+necessary configuration options), the installation pattern is fairly
+different.  So to keep things simple, the installation is skipped.
+This also speeds up the pre-test steps by about thirty seconds on
+average.
+
+To use it, simply provide to your CI the following pre-install step:
+#+BEGIN_SRC sh
+  bash -e <(curl -fsSkL https://raw.githubusercontent.com/vermiculus/emake.el/${EMAKE_SHA}/install-emacs)
+#+END_SRC
+and make sure the following environment variables have values when it
+is run:
+#+BEGIN_SRC sh
+  EMACS_VERSION="26.1"
+  EMACS_DIR="/path/for/emacs/build"
+#+END_SRC
+then make sure to call =emacs= as =${EMACS_DIR}/src/emacs= (as this is
+where Emacs is dumped by the build).  On Travis CI, I recommend
+setting =EMACS_DIR=$HOME/emacs= and caching this directory.
+
+Note that your CI must export the =CI= environment variable to a
+non-null value in order for the script to function.  This is a
+protective measure to avoid corrupting a local installation.
+
+** macOS
+While this script works out-of-the-box for Linux, there are a few
+steps you should take when building on macOS.  In the =example=
+submodule, I use the Makefile to effect these special changes.  Since
+I use Travis CI, I have guaranteed ways to determine which operating
+system the build is running under.  There is currently no known way
+for the general =install-emacs= script to handle this, but the manual
+handling honestly isn't too bad.
+
+I add this to =.travis.yml= to make sure the following packages are
+up-to-date using Homebrew:
+#+BEGIN_SRC yaml
+addons:
+  homebrew:
+    packages:
+      - autoconf
+      - automake
+      - gnutls
+      - texinfo
+#+END_SRC
+and I add this to the Makefile:
+#+BEGIN_SRC makefile
+  ifeq ($(TRAVIS_OS_NAME),osx)
+  export EMACS_CONFIGURE_ARGS := --with-ns --with-modules
+  endif
+#+END_SRC
+since Emacs does not support building without a GUI toolkit under
+macOS.
+
+** Troubleshooting
+If you've recently updated EMake (or switched solutions entirely,
+i.e. from EVM to =install-emacs=) and the build has stopped working for
+some unknown reason, first try clearing the cache for your build:
+
+- [[https://docs.travis-ci.com/user/caching/#clearing-caches][Instructions for Travis CI]]
+
+If that doesn't work, I recommend disabling the cache temporarily and
+trimming down your testing matrix (test only on the configuration
+that's failing) while you sort out the problem -- this will give
+faster response times.
+
+* Using EMake
+EMake itself is driven by a few environment variables:
+- =PACKAGE_FILE= :: This is the Elisp file that contains the definition
+                    of your package (e.g., =Author=, =Package-Version=,
+                    =Keywords=, etc.).  This could be a =*-pkg.el= file.
+- =PACKAGE_TESTS= :: This contains a space-delimited list of Elisp files
+     to load before running tests.  The files are loaded in the order
+     they're provided.
+- =PACKAGE_LISP= :: This contains a space-delimited list of files to be
+                    considered part of the package.
+- =PACKAGE_ARCHIVES= :: This contains a space-delimited list of
+     =package.el= archives to use for resolving dependencies.
+If your test suite has extra dependencies that shouldn't be proper
+dependencies of the project as a whole, you can tell EMake what to do
+by configuring the following environment variables:
+- =PACKAGE_TEST_DEPS= :: This contains a space-delimited list of
+     package-names your test suite is dependent upon.
+- =PACKAGE_TEST_ARCHIVES= :: These archives will be used to install the
+     dependencies in =PACKAGE_TEST_DEPS= (and their dependencies, ...).
+     If not specified, =PACKAGE_ARCHIVES= will be used for this as well.
+
+The entry point to EMake is the function ~emake~ and is intended to be
+invoked as follows:
+#+BEGIN_SRC sh
+  emacs -batch -l emake.el --eval "(emake (pop argv))" target [args...]
+#+END_SRC
+
+Since this is just Elisp, other setup can be made by just evaluating
+some lisp in this invocation or loading an external file.  You might
+want to set ~byte-compile-error-on-warn~, for example, or maybe define
+new testing frameworks.  It's just Elisp -- no funny business!
+
+To provide extra information, you can use =EMAKE_DEBUG_FLAGS=, which
+see.
+
+* Using EMake /Conveniently/
+Since most package development is pretty similar across projects,
+EMake includes in its distribution a file called =emake.mk=.  By
+downloading this file instead, you get instant access to the available
+targets (=setup=, =compile=, and =test=) and support for both the ERT and
+Buttercup testing frameworks as well as =checkdoc= and =package-lint=.
+All you have to do is set =EMAKE_SHA1= and the =PACKAGE_BASENAME=
+variables.  For example, a one-file package by the name of
+=coffee-table.el= would use =PACKAGE_BASENAME=coffee-table=.  More complex
+environment setup (e.g., use of a =coffee-table-pkg.el= file) can be
+configured using the standard variables above.
+
+=EMAKE_SHA1= should be the SHA-1 of the commit you wish to use for
+testing.  This is to remove the possibility of EMake changes
+introducing bugs in your builds.  I recommend taking the most recent
+SHA-1 of the repository (unless, perhaps, you find yourself unluckily
+in the middle of a push -- just check the commit date).
+
+=EMACS_VERSION= should be set in your =~/.profile=.  (If you're using
+=exec-path-from-shell=, don't forget to add it to
+=exec-path-from-shell-variables= if you want to run EMake from Emacs.)
+
+See this project's own =Makefile= for an example.
+
+* Default Targets
+EMake comes with a few default targets to give it some out-of-the-box
+functionality.  You can override any of these targets by declaring
+functions with =emake-target= (see /Extending EMake/); your new
+definitions will be preferred.
+
+** =install=
+Invoking =$(EMAKE) install= parses =PACKAGE_FILE= to install all its noted
+dependencies (in the =Package-Requires= header) from =PACKAGE_ARCHIVES=.
+
+The standard behavior looks for dependencies in the same parent
+directory that holds your project.  For example, if your project is
+called =this-project= and has dependencies =dependency-1= and
+=dependency-2=, EMake expects your directory structure to look like
+this:
+#+BEGIN_EXAMPLE
+- this-project/
+  - README.org
+  - this-project.el
+- dependency-1/
+  - dependency-1.el
+- dependency-2/
+  - dependency-2.el
+#+END_EXAMPLE
+
+You can override this behavior (e.g., for non-standard packages) by
+prepending to ~emake-package-dev-locations-functions~.  For example, the
+following function finds Magit if it is installed in one of the parent
+directories of the current package:
+#+BEGIN_SRC elisp
+  (defun find-magit (pkg)
+    (when (eq pkg 'magit)
+      (let* ((parent-dir (emake--dir-parent emake-project-root))
+             (default-directory (locate-dominating-file parent-dir "magit"))
+             (dir (expand-file-name "magit")))
+        (when (file-directory-p dir)
+          (cons (expand-file-name "lisp/magit-pkg.el")
+                (expand-file-name "lisp/"))))))
+
+  (push #'find-magit emake-package-dev-locations-functions)
+#+END_SRC
+
+The environment variable =EMAKE_USE_LOCAL= controls how =PACKAGE_ARCHIVES=
+are used to install new dependencies.  The above behavior is the
+default, but two values exist for this variable:
+- =ALWAYS= :: If the dependency cannot be found locally, error out.
+- =NEVER= :: The local machine will not be searched for dependencies.
+
+** =compile=
+Invoking =$(EMAKE) compile= byte-compiles all files in =PACKAGE_LISP=.
+You can provide the optional argument =~error-on-warn= to instruct the
+byte-compiler to error-out on compilation warnings (like unused local
+bindings or non-namespaced variables).
+
+** =test=
+Invoking =$(EMAKE) test= kicks off the automated tests for your project.
+If you're using a framework that can't discover test definitions for
+you, you can define =PACKAGE_TESTS= to be the file (or files) to load
+those definitions from before running the tests.
+
+You can specify which framework to use with an additional argument:
+=$(EMAKE) test ert= tests with ERT (the default) and =$(EMAKE) test
+buttercup= tests with Buttercup.  You can find a full list of defined
+targets by running =$(EMAKE) help test=.  If your favorite framework
+isn't built-in yet, don't worry!  You can define your own very easily
+as described below in /Extending Emake/.
+
+** =setup-load-path=
+Incoking =$(EMAKE) setup-load-path= will start Emacs with =load-path=
+configured as it would be during testing.  This is particularly useful
+when you leave =--batch= out of the invocation.
+
+** =help=
+Shows documentation for all Makefile targets.
+** =help-*=
+Shows documentation for an EMake target.  For example,
+#+BEGIN_EXAMPLE
+make help-compile
+[...] emacs -batch -l emake.el [...] help compile
+emake: Running target "help" with function `emake-help' with arguments ("compile")
+emake: Documentation of compile (function emake-compile)...
+Compile all files in PACKAGE_LISP.
+Several OPTIONS are available:
+
+‘~error-on-warn’: set ‘byte-compile-error-on-warn’
+
+----
+
+This target uses the following environment variables:
+
+    PACKAGE_LISP: space-delimited list of Lisp files in this package
+
+emake: Documentation of compile (function emake-compile)...done
+#+END_EXAMPLE
+
+
+* Extending EMake
+** New Targets
+Targets can be created (or overridden) by defining a function using
+the =emake-target= property in its =declare= form before calling the ~emake~
+function.
+
+For example, if =custom.el= contains a custom target defined so:
+#+BEGIN_SRC elisp
+  (defun my-function ()
+    (declare (emake-target "my-cake"))
+    (message "Yum!"))
+#+END_SRC
+and you invoke EMake as:
+#+BEGIN_SRC makefile
+  cake:
+          emacs -batch -l emake.el -l custom.el --eval "(emake (pop argv))" my-cake
+#+END_SRC
+and run =make cake=, ~my-function~ will be executed after some output
+boilerplate.  See ~emake--resolve-target~ for more details.
+
+You may find ~emake-with-elpa~, =emake-project-root=, and
+=emake-package-desc= helpful (along with the ~package-desc-~ family of
+cl-struct accessors provided by =package.el=).
+
+If your target is generalized and generally useful, consider
+contributing it to this repository!
+
+** New Testing Frameworks
+Similar to defining a new target, there is a =declare= form used for
+defining handlers for new testing frameworks: =emake-test=.  By
+providing this form, the default =test= target will be able to pick up
+your function for use.  For example, here is a definition for running
+Buttercup:
+#+BEGIN_SRC elisp
+  (defun my-buttercup ()
+    "Runs Buttercup tests with `buttercup-run-discover'."
+    (declare (emake-test "buttercup"))
+    (require 'buttercup)
+    (message "I like doing things my way.")
+    (buttercup-run-discover))
+#+END_SRC
+Now, running =$(EMAKE) test buttercup= will kick off your Buttercup
+tests after printing a short message.
