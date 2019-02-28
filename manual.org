@@ -129,6 +129,20 @@ by configuring the following environment variables:
      dependencies in =PACKAGE_TEST_DEPS= (and their dependencies, ...).
      If not specified, =PACKAGE_ARCHIVES= will be used for this as well.
 
+There are some additional environment variables that control the
+behavior of EMake:
+- =EMAKE_WORKDIR= :: This directory is used for all files downloaded by
+     EMake.
+- =EMAKE_LOGLEVEL= :: Controls verbosity of logging; one of =DEBUG=, =INFO=,
+     or =NONE=.
+- =EMAKE_USE_LOCAL= :: Controls use of =PACKAGE_ARCHIVES=.  It can have
+     the following values:
+  - =ALWAYS= :: prohibits installation of remote dependencies
+  - =NEVER= :: forces install from the archives (i.e., never use local
+               copies)
+  - any other value :: installs from the archives when local copies
+       are unavailable
+
 The entry point to EMake is the function ~emake~ and is intended to be
 invoked as follows:
 #+BEGIN_SRC sh
@@ -141,7 +155,7 @@ want to set ~byte-compile-error-on-warn~, for example, or maybe define
 new testing frameworks.  It's just Elisp -- no funny business!
 
 To provide extra information, you can use =EMAKE_DEBUG_FLAGS=, which
-see.
+see ~emake--debug-flags~.
 
 * Using EMake /Conveniently/
 Since most package development is pretty similar across projects,
@@ -161,8 +175,8 @@ introducing bugs in your builds.  I recommend taking the most recent
 SHA-1 of the repository (unless, perhaps, you find yourself unluckily
 in the middle of a push -- just check the commit date).
 
-=EMACS_VERSION= should be set in your =~/.profile=.  (If you're using
-=exec-path-from-shell=, don't forget to add it to
+I recommend that =EMACS_VERSION= be set in your =~/.profile=.  (If you're
+using =exec-path-from-shell=, don't forget to add it to
 =exec-path-from-shell-variables= if you want to run EMake from Emacs.)
 
 See this project's own =Makefile= for an example.
