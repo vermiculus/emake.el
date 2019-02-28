@@ -177,10 +177,10 @@ the EMACS_VERSION environment variable."
                              (match-string 0 emacs-version)))
            (match (version= major-minor (string-trim (emake--getenv "EMACS_VERSION")))))
       (if match
-          (emake--message-info "Emacs version %S verified" (emake--getenv "EMACS_VERSION"))
-        (emake--message-info "Emacs version %S expected; but this `emacs-version' is %S"
-                             (emake--getenv "EMACS_VERSION")
-                             emacs-version))
+          (emake-message-info "Emacs version %S verified" (emake--getenv "EMACS_VERSION"))
+        (emake-message-info "Emacs version %S expected; but this `emacs-version' is %S"
+                            (emake--getenv "EMACS_VERSION")
+                            emacs-version))
       match)))
 
 (defun emake--message-internal (format &rest args)
@@ -190,13 +190,13 @@ list of arguments for that format string."
   (let ((s (apply #'format format args)))
     (princ (concat (if noninteractive "\033[0;37memake:\033[0m" "emake:") s "\n"))
     s))
-(defun emake--message (format &rest args)
+(defun emake-message (format &rest args)
   "Print a message to standard out.
 Argument FORMAT is a format string.  Optional argument ARGS is a
 list of arguments for that format string."
   (apply #'emake--message-internal (concat " " format) args))
 
-(defmacro emake--message-loglevel (fn tag &rest values)
+(defmacro emake-message-loglevel (fn tag &rest values)
   "Generate a messaging function.
 FN is the name of the new function.  TAG is a string given to
 note the level of the function.  VALUES is a list of values of
@@ -217,22 +217,22 @@ EMAKE_LOGLEVEL is one of the following values:
                   (format (if noninteractive "\033[32m%s:\033[0m %s" "%s: %s")
                           ,tag format)
                   args))))))
-(emake--message-loglevel emake--message-debug "DEBUG" "DEBUG")
-(emake--message-loglevel emake--message-info  "INFO"  "DEBUG" "INFO")
+(emake-message-loglevel emake-message-debug "DEBUG" "DEBUG")
+(emake-message-loglevel emake-message-info  "INFO"  "DEBUG" "INFO")
 
 (defmacro emake-task (description &rest body)
   "Wrapped by DESCRIPTION messages, run BODY."
   (declare (indent 1) (debug t))
   (let ((Sdescription (cl-gensym))
         (printer (cond ((stringp description)
-                        #'emake--message)
+                        #'emake-message)
                        ((listp description)
                         (pcase (car description)
                           (`info  (setq description (cadr description))
-                                  #'emake--message-info)
+                                  #'emake-message-info)
                           (`debug (setq description (cadr description))
-                                  #'emake--message-debug)
-                          (_ #'emake--message)))
+                                  #'emake-message-debug)
+                          (_ #'emake-message)))
                        (t (error "Unrecognized description format")))))
     `(let ((,Sdescription (concat ,description "..."))
            (kill-emacs-hook kill-emacs-hook)) ; close this variable
@@ -296,13 +296,13 @@ an ELPA."
          (location (unless (string= local "NEVER")
                      (cl-some (lambda (pkg-finder)
                                 (when-let ((result (funcall pkg-finder package)))
-                                  (emake--message-debug "Found %S with %S" package pkg-finder)
+                                  (emake-message-debug "Found %S with %S" package pkg-finder)
                                   result))
                               emake-package-dev-locations-functions))))
     (unless location
       (if (string= local "ALWAYS")
           (error "Package not found locally: %S" package)
-        (emake--message-debug "Package not found locally and will use archives: %S" package)))
+        (emake-message-debug "Package not found locally and will use archives: %S" package)))
     location))
 
 ;;; Dependencies
@@ -405,7 +405,7 @@ is the executable body of the macro."
        (emake-task (debug "Initializing package.el")
          (package-initialize))
        (dolist (pair (cdr (emake-package-reqs)))
-         (emake--message-info "Using dependency `%S' at %s" (car pair) (cdr pair))
+         (emake-message-info "Using dependency `%S' at %s" (car pair) (cdr pair))
          (add-to-list 'load-path (cdr pair)))
        ,@body)))
 
@@ -435,9 +435,9 @@ ARCHIVES is a list of archives like `package-archives'."
                                       package-user-dir
                                       (car archive))))
         (if (file-exists-p archive-contents)
-            (emake--message-debug "Already downloaded `%s' to %s"
-                                  (car archive)
-                                  (file-relative-name archive-contents))
+            (emake-message-debug "Already downloaded `%s' to %s"
+                                 (car archive)
+                                 (file-relative-name archive-contents))
           (push archive empty-archives))))
     (when empty-archives
       (emake-task (info (format "Downloading archives to `%s/': %S"
@@ -457,9 +457,9 @@ directory to be added to `load-path'."
   (emake--package-download-archives package-archives)
   (dolist (dep (car dependencies-spec))
     (if-let ((entry (assq dep (cdr dependencies-spec))))
-        (emake--message-debug "Skipping dev package: %S" entry)
+        (emake-message-debug "Skipping dev package: %S" entry)
       (if (package-installed-p dep)
-          (emake--message-debug "Already installed: %S" dep)
+          (emake-message-debug "Already installed: %S" dep)
         (emake-task (info (format "Installing %S" dep))
           (package-install dep))))))
 
@@ -556,10 +556,10 @@ dependencies."
   (if-let ((reqs (emake-package-reqs)))
       (emake-with-elpa
        (emake-task (info (format "Installing in %s" (file-relative-name package-user-dir)))
-         (emake--message-debug "Dependencies: %S" reqs)
-         (emake--message-debug "Development package locations functions: %S" emake-package-dev-locations-functions)
+         (emake-message-debug "Dependencies: %S" reqs)
+         (emake-message-debug "Development package locations functions: %S" emake-package-dev-locations-functions)
          (emake--install reqs)))
-    (emake--message-debug "No dependencies detected")))
+    (emake-message-debug "No dependencies detected")))
 
 (defun emake-compile (&rest options)
   "Compile all files in PACKAGE_LISP.
@@ -572,7 +572,7 @@ Several OPTIONS are available:
   (emake-with-options options
       (("error-on-warn" byte-compile-error-on-warn))
     (let (compile-buffer)
-      (emake--message-debug "  error-on-warn => %S" byte-compile-error-on-warn)
+      (emake-message-debug "  error-on-warn => %S" byte-compile-error-on-warn)
       (emake-with-elpa
        (add-to-list 'load-path emake-project-root)
        (dolist (f (emake--clean-list "PACKAGE_LISP"))
@@ -614,7 +614,7 @@ appropriate arguments to that function.."
                          (expand-file-name emake-project-root)
                          (expand-file-name pkg-dir))))
     (unless desc
-      (emake--message-info "Guessed package name: %S" name))
+      (emake-message-info "Guessed package name: %S" name))
     (emake-task (info (if (string= relative-path "")
                           (format "Generating autoloads for %S" name)
                         (format "Generating autoloads for %S in %S" name relative-path)))
@@ -712,7 +712,7 @@ TEST-RUNNER."
       (setq test-runner (intern test-runner)))
      (t
       (error "%S test-runner not defined" test-runner))))
-  (emake--message-debug "Detected test-runner as `%S'" test-runner)
+  (emake-message-debug "Detected test-runner as `%S'" test-runner)
 
   (unless (functionp test-runner)
     (error "Test-runner not defined!"))
@@ -762,7 +762,7 @@ The environment's value for LIST-ENV is used to simulate
 arguments for a function, FN, that expects them from the command
 line."
   (let ((command-line-args-left (emake--clean-list list-env)))
-    (emake--message-debug "Simulating command-line arguments: %S" command-line-args-left)
+    (emake-message-debug "Simulating command-line arguments: %S" command-line-args-left)
     (funcall fn)))
 
 (defun emake--test-helper-ert ()
