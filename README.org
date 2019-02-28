@@ -28,7 +28,7 @@ is [[https://travis-ci.org/vermiculus/emake.el-example][hooked up to Travis]].
 
 ** Quick Start
 In keeping with recent trends, what follows is a shell script to
-install the most recent version of EMake with minimal configuration.
+build the most recent version of EMake with minimal configuration.
 #+BEGIN_SRC sh
 bash <(curl -fsSL https://raw.githubusercontent.com/vermiculus/emake.el/master/new)
 #+END_SRC
@@ -49,8 +49,8 @@ your EMake version in your CI's configuration file (see /Using EMake/).
                 about project setup that should be accurate for most
                 projects.  See the section dedicated to this file near
                 the end of this documentation.
-- =install-emacs= :: This is a shell script that can build a minimal
-     Emacs on Linux and macOS.
+- =build-emacs= :: This is a shell script that can build a minimal Emacs
+                   on Linux and macOS.
 - =example/= :: This is an example project demonstrating the typical use
                 of EMake.
 

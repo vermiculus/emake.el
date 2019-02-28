@@ -26,8 +26,8 @@ own potential pitfalls that you should weigh before making a decision:
      caching and you have no means of effecting this yourself.
 
 To handle what I believe to be the vast majority of cases, though, a
-simple, configurable script has been developed in =./install-emacs=.
-Like EMake, it is driven by environment variables:
+simple, configurable script has been developed in =./build-emacs=.  Like
+EMake, it is driven by environment variables:
 - =EMACS_VERSION= :: The =MAJOR.MINOR= version of Emacs to install.  If
      the special value =snapshot= is used, Emacs is cloned from Git.
 - =EMACS_DIR= :: The directory in which to build Emacs.
@@ -51,7 +51,7 @@ average.
 
 To use it, simply provide to your CI the following pre-install step:
 #+BEGIN_SRC sh
-  bash -e <(curl -fsSkL https://raw.githubusercontent.com/vermiculus/emake.el/${EMAKE_SHA}/install-emacs)
+  bash -e <(curl -fsSkL https://raw.githubusercontent.com/vermiculus/emake.el/${EMAKE_SHA}/build-emacs)
 #+END_SRC
 and make sure the following environment variables have values when it
 is run:
@@ -73,7 +73,7 @@ steps you should take when building on macOS.  In the =example=
 submodule, I use the Makefile to effect these special changes.  Since
 I use Travis CI, I have guaranteed ways to determine which operating
 system the build is running under.  There is currently no known way
-for the general =install-emacs= script to handle this, but the manual
+for the general =build-emacs= script to handle this, but the manual
 handling honestly isn't too bad.
 
 I add this to =.travis.yml= to make sure the following packages are
@@ -98,7 +98,7 @@ macOS.
 
 ** Troubleshooting
 If you've recently updated EMake (or switched solutions entirely,
-i.e. from EVM to =install-emacs=) and the build has stopped working for
+i.e. from EVM to =build-emacs=) and the build has stopped working for
 some unknown reason, first try clearing the cache for your build:
 
 - [[https://docs.travis-ci.com/user/caching/#clearing-caches][Instructions for Travis CI]]
