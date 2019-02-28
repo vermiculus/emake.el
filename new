@@ -49,7 +49,6 @@ EMAKE_SHA1            ?= ${EMAKE_SHA1}
 PACKAGE_BASENAME      := ${PACKAGE_BASENAME}
 
 PACKAGE_ARCHIVES      := gnu melpa
-PACKAGE_TEST_ARCHIVES := gnu melpa
 
 .DEFAULT_GOAL: help
 
