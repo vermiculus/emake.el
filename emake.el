@@ -173,9 +173,10 @@ the EMACS_VERSION environment variable."
   (declare (emake-environment-variables "EMACS_VERSION"))
   (let ((envver (emake--getenv "EMACS_VERSION")))
     (if (string= envver "snapshot")
-        (progn (emake-message-info "Apparently running from snapshot (EMACS_VERSION=%S); cannot verify" envver)
-               (emake-message-info "Reported version: %S" emacs-version)
-               t)
+        (prog1 t (emake-message-info
+                  (concat "Apparently running from snapshot; cannot verify "
+                          "(EMACS_VERSION=%S; emacs-version=%S)")
+                  envver emacs-version))
       (emake-task (debug "Verifying Emacs version")
         (let* ((major-minor (and (string-match (rx (+ digit) ?. (+ digit))
                                                emacs-version)
