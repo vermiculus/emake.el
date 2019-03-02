@@ -343,8 +343,9 @@ dependency are added so that all dependencies are still met."
             (require 'lisp-mnt)
             (with-temp-buffer
               (insert-file-contents-literally package-file)
-              (package--prepare-dependencies
-               (package-read-from-string (lm-header "package-requires")))))))
+              (when-let ((header (lm-header "package-requires")))
+                (package--prepare-dependencies
+                 (package-read-from-string header)))))))
 
 (defun emake-package-desc (package-file)
   "Get a `package-desc' object from PACKAGE-FILE if possible."
