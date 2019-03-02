@@ -22,10 +22,10 @@ env:
   - EMACS="$HOME/emacs/src/emacs"
 before_install:
   # You generally don't want 'x' in your own projects, but for the
-  # purposes of actually developing `install-emacs', it's useful
+  # purposes of actually developing `build-emacs', it's useful
   # information to have.  See the example for how you *should* be
   # doing all this!
-- bash -ex install-emacs
+- bash -ex build-emacs
 install:
 - make install
 script:
