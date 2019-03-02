@@ -27,13 +27,13 @@ if [ "${EMACS_VERSION}" == "snapshot" ]; then
     # https://github.com/emacs-mirror/emacs.git
     rm -rf "${EMACS_DIR}"
     git clone --depth=1 "${EMACS_GIT_URL:-https://git.savannah.gnu.org/git/emacs.git}" "${EMACS_DIR}"
-    cd "${EMACS_DIR}"
 else
     # but make sure to abort if Emacs has already been created
     if [ -e "${EMACS_DIR}/src/emacs" ]; then
         printf "Emacs found at ${EMACS_DIR}/src/emacs; abort\n"
         exit 0
     fi
+    rm -rf "${EMACS_DIR}"
     TAR_NAME="emacs-${EMACS_VERSION}.tar.xz"
     REMOTE="https://ftp.gnu.org/gnu/emacs/${TAR_NAME}"
     PARENT="${EMACS_DIR%/*}"
@@ -43,13 +43,14 @@ else
     cd "${PARENT}"
     tar xf "${HOME}/${TAR_NAME}"
     mv "emacs-${EMACS_VERSION}" "${EMACS_DIR##*/}"
-    cd "${EMACS_DIR}"
 fi
 
 # provide default configuration flags
 if [ -z "${EMACS_CONFIGURE_ARGS}" ]; then
     EMACS_CONFIGURE_ARGS="--with-x-toolkit=no --without-x --without-all --with-xml2 --with-modules"
 fi
+
+cd "${EMACS_DIR}"
 
 ${MAKE:-make} configure
 printf "Building Emacs with configuration: ${EMACS_CONFIGURE_ARGS}\n"
