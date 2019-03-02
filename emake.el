@@ -176,13 +176,13 @@ the EMACS_VERSION environment variable."
         (progn (emake-message-info "Apparently running from snapshot (EMACS_VERSION=%S); cannot verify" envver)
                (emake-message-info "Reported version: %S" emacs-version)
                t)
-      (emake-task (info "Verifying Emacs version")
+      (emake-task (debug "Verifying Emacs version")
         (let* ((major-minor (and (string-match (rx (+ digit) ?. (+ digit))
                                                emacs-version)
                                  (match-string 0 emacs-version)))
                (match (version= major-minor (string-trim envver))))
           (if match
-              (emake-message-info "Emacs version %S verified" envver)
+              (emake-message-debug "Emacs version %S verified" envver)
             (emake-message-info "Emacs version %S expected; but this `emacs-version' is %S"
                                 envver
                                 emacs-version))
@@ -412,7 +412,7 @@ is the executable body of the macro."
        (emake-task (debug "Initializing package.el")
          (package-initialize))
        (dolist (pair (cdr (emake-package-reqs)))
-         (emake-message-info "Using dependency `%S' at %s" (car pair) (cdr pair))
+         (emake-message-debug "Using dependency `%S' at %s" (car pair) (cdr pair))
          (add-to-list 'load-path (cdr pair)))
        ,@body)))
 
@@ -514,10 +514,10 @@ The executed function is emake-my-TARGET if bound, else emake-TARGET."
          ;; this variable must eq t
          (and (member "debug" emake--debug-flags) t)))
     (cl-assert (emake-verify-version))
-    (emake-task (info (format (if command-line-args-left
-                                  "Running target %S with function `%S' with arguments %S"
-                                "Running target %S with function `%S'")
-                              target fun command-line-args-left))
+    (emake-task (debug (format (if command-line-args-left
+                                   "Running target %S with function `%S' with arguments %S"
+                                 "Running target %S with function `%S'")
+                               target fun command-line-args-left))
       (when-let ((behavior (cond
                             ((member "show-environment" emake--debug-flags) t)
                             ((member "show-environment:non-nil" emake--debug-flags) 'only))))
@@ -621,7 +621,7 @@ appropriate arguments to that function.."
                          (expand-file-name emake-project-root)
                          (expand-file-name pkg-dir))))
     (unless desc
-      (emake-message-info "Guessed package name: %S" name))
+      (emake-message-debug "Guessed package name: %S" name))
     (emake-task (info (if (string= relative-path "")
                           (format "Generating autoloads for %S" name)
                         (format "Generating autoloads for %S in %S" name relative-path)))
@@ -702,8 +702,8 @@ TEST-RUNNER."
                                        (emake--get-syms-with-props 'emake-default-test 'emake-test)))))
   (when-let ((test-dependencies (emake--clean-list "PACKAGE_TEST_DEPS")))
     (emake-with-elpa-test
-     (emake-task (info (format "Installing test suite dependencies into %s"
-                               (file-relative-name package-user-dir)))
+     (emake-task (debug (format "Installing test suite dependencies into %s"
+                                (file-relative-name package-user-dir)))
        (emake--install (list (mapcar #'intern test-dependencies))))))
   (let* ((tests (seq-filter (lambda (s)
                               (or (string= test-runner (function-get s 'emake-test))
@@ -736,7 +736,7 @@ TEST-RUNNER."
          (load test-file))))
 
    ;; run the tests and exit with an appropriate status
-   (emake-task (info (format "Running test `%S'" test-runner))
+   (emake-task (debug (format "Running test `%S'" test-runner))
      (let ((command-line-args-left args))
        (funcall test-runner)))))
 
@@ -799,7 +799,7 @@ line."
     (ignore-errors
       (kill-buffer guess-checkdoc-error-buffer-name))
     (mapc (lambda (f)
-            (emake-task (info (format "Checking %s" f))
+            (emake-task (debug (format "Checking %s" f))
               (checkdoc-file f)))
           (emake--clean-list "PACKAGE_LISP"))
     (when-let ((buf (get-buffer guess-checkdoc-error-buffer-name)))
