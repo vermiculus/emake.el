@@ -172,17 +172,21 @@ Compares the MAJOR.MINOR versions of variable `emacs-version' to
 the EMACS_VERSION environment variable."
   (declare (emake-environment-variables "EMACS_VERSION"))
   (let ((envver (emake--getenv "EMACS_VERSION")))
-    (emake-task (info "Verifying Emacs version")
-      (let* ((major-minor (and (string-match (rx (+ digit) ?. (+ digit))
-                                             emacs-version)
-                               (match-string 0 emacs-version)))
-             (match (version= major-minor (string-trim envver))))
-        (if match
-            (emake-message-info "Emacs version %S verified" envver)
-          (emake-message-info "Emacs version %S expected; but this `emacs-version' is %S"
-                              envver
-                              emacs-version))
-        match))))
+    (if (string= envver "snapshot")
+        (emake-message-info
+         "Running Emacs from git(%s)"
+         (substring (string-trim (shell-command-to-string "git rev-parse HEAD")) 0 8))
+      (emake-task (info "Verifying Emacs version")
+        (let* ((major-minor (and (string-match (rx (+ digit) ?. (+ digit))
+                                               emacs-version)
+                                 (match-string 0 emacs-version)))
+               (match (version= major-minor (string-trim envver))))
+          (if match
+              (emake-message-info "Emacs version %S verified" envver)
+            (emake-message-info "Emacs version %S expected; but this `emacs-version' is %S"
+                                envver
+                                emacs-version))
+          match)))))
 
 (defun emake--message-internal (format &rest args)
   "Print a message to standard out.
