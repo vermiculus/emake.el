@@ -50,6 +50,8 @@ PACKAGE_BASENAME      := ${PACKAGE_BASENAME}
 
 PACKAGE_ARCHIVES      := gnu melpa
 
+include emake.mk
+
 .DEFAULT_GOAL: help
 
 emake.mk: ## download EMake's default driver
@@ -58,8 +60,6 @@ emake.mk: ## download EMake's default driver
 clean: ## clean compiled lisp and EMake files
 	rm -rf \$(EMAKE_WORKDIR)
 	rm -f \$(PACKAGE_LISP:.el=.elc)
-
-include emake.mk
 EOF
 printf "done\n"
 
