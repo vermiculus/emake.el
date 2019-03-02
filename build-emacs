@@ -27,6 +27,7 @@ if [ "${EMACS_VERSION}" == "snapshot" ]; then
     # https://github.com/emacs-mirror/emacs.git
     rm -rf "${EMACS_DIR}"
     git clone --depth=1 "${EMACS_GIT_URL:-https://git.savannah.gnu.org/git/emacs.git}" "${EMACS_DIR}"
+    printf "Received %s\n" "$(git rev-parse HEAD)"
 else
     # but make sure to abort if Emacs has already been created
     if [ -e "${EMACS_DIR}/src/emacs" ]; then
