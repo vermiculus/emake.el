@@ -37,18 +37,28 @@ EMAKE_WORKDIR ?= .emake
 #   EMACS_ARGS: [extra arguments for each invocation of emacs]
 #   (below; see README)
 
-ifndef PACKAGE_FILE
-ifneq (,$(wildcard $(PACKAGE_BASENAME)-pkg.el))
-# *-pkg.el file exists
+ifndef PACKAGE_FILE		# if we weren't given a PACKAGE_FILE, try to detect one
+ifneq (,$(wildcard $(PACKAGE_BASENAME)-pkg.el)) # If BASENAME-pkg.el exists, use that
 PACKAGE_FILE := $(PACKAGE_BASENAME)-pkg.el
+$(info Using PACKAGE_FILE=$(PACKAGE_FILE))
+else				# otherwise,
+$(info ./$(PACKAGE_BASENAME)-pkg.el does not exist)
+ifneq (,$(wildcard $(PACKAGE_BASENAME).el)) # look for BASENAME.el
+PACKAGE_FILE := $(PACKAGE_BASENAME).el	    # if that exists, use it
+$(info Using PACKAGE_FILE=$(PACKAGE_FILE))
 else
-# does not exist; use default
-PACKAGE_FILE := $(PACKAGE_BASENAME).el
-endif
-endif
+$(info ./$(PACKAGE_BASENAME).el does not exist) # otherwise we're out of ideas
+endif				# BASENAME.el exists?
+endif				# BASENAME-pkg.el exists?
+endif				# PACKAGE_FILE defined?
 
-ifeq (,$(wildcard $(PACKAGE_FILE)))
-$(error PACKAGE_FILE could not be detected; please set manually or conform to established patterns)
+ifeq (,$(wildcard $(PACKAGE_FILE))) # if PACKAGE_FILE doesn't exist, error out
+ifeq (,$(PACKAGE_FILE))		    # if PACKAGE_FILE is null, we tried to detect it above
+$(info Could not detect PACKAGE_FILE; has it been created?)
+else				# otherwise, we've been given bad configuration
+$(info './$(PACKAGE_FILE)' does not exist)
+endif
+$(error cannot continue without PACKAGE_FILE)
 endif
 
 PACKAGE_LISP            ?= $(filter-out %-pkg.el %-autoloads.el, $(wildcard $(PACKAGE_BASENAME)*.el))
