@@ -232,12 +232,13 @@ EMAKE_LOGLEVEL is one of the following values:
         (printer (cond ((stringp description)
                         #'emake-message)
                        ((listp description)
-                        (pcase (car description)
+                        (pcase-exhaustive (car description)
                           (`info  (setq description (cadr description))
                                   #'emake-message-info)
                           (`debug (setq description (cadr description))
                                   #'emake-message-debug)
-                          (_ #'emake-message)))
+                          (`plain (setq description (cadr description))
+                                  #'emake-message)))
                        (t (error "Unrecognized description format")))))
     `(let ((,Sdescription (concat ,description "..."))
            (kill-emacs-hook kill-emacs-hook)) ; close this variable
@@ -637,7 +638,7 @@ with the first line of their documentation string."
   (declare (emake-default-target "help"))
   (if target
       (let ((fn (emake--resolve-target target)))
-        (emake-task (format "Help for target `%s' (function %S)" target fn)
+        (emake-task (plain (format "Help for target `%s' (function %S)" target fn))
           (princ (documentation fn))
           (princ "\n"))
         (emake-task "Environment variables used"
@@ -748,7 +749,7 @@ TEST-RUNNER."
                          (function-get fn 'emake-test)))
             all))
     (pcase-dolist (`(,fn . ,test) (sort all (lambda (a b) (string< (cdr a) (cdr b)))))
-      (emake-task (format "Help for test `%s' (function %S)" test fn)
+      (emake-task (plain (format "Help for test `%s' (function %S)" test fn))
         (princ (documentation fn))
         (princ "\n")
         (emake-task "Environment variables used"
