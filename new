@@ -52,7 +52,7 @@ PACKAGE_ARCHIVES      := gnu melpa
 
 .DEFAULT_GOAL: help
 
-emake.mk: ## download EMake
+emake.mk: ## download EMake's default driver
         curl -fsSkL "https://raw.githubusercontent.com/vermiculus/emake.el/\$(EMAKE_SHA1)/emake.mk"
 
 clean: ## clean compiled lisp and EMake files
