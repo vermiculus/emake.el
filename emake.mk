@@ -36,7 +36,21 @@ EMAKE_WORKDIR ?= .emake
 # User options
 #   EMACS_ARGS: [extra arguments for each invocation of emacs]
 #   (below; see README)
-PACKAGE_FILE            ?= $(PACKAGE_BASENAME).el
+
+ifndef PACKAGE_FILE
+ifneq (,$(wildcard $(PACKAGE_BASENAME)-pkg.el))
+# *-pkg.el file exists
+PACKAGE_FILE := $(PACKAGE_BASENAME)-pkg.el
+else
+# does not exist; use default
+PACKAGE_FILE := $(PACKAGE_BASENAME).el
+endif
+endif
+
+ifeq (,$(wildcard $(PACKAGE_FILE)))
+$(error PACKAGE_FILE could not be detected; please set manually or conform to established patterns)
+endif
+
 PACKAGE_LISP            ?= $(filter-out %-pkg.el %-autoloads.el, $(wildcard $(PACKAGE_BASENAME)*.el))
 PACKAGE_TESTS           ?= $(wildcard test/*.el)
 PACKAGE_ARCHIVES        ?= gnu
