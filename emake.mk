@@ -32,20 +32,29 @@ EMAKE_WORKDIR ?= .emake
 #   EMACS_ARGS: [extra arguments for each invocation of emacs]
 #   (below; see README)
 
-ifndef PACKAGE_FILE		# if we weren't given a PACKAGE_FILE, try to detect one
-ifneq (,$(wildcard $(PACKAGE_BASENAME)-pkg.el)) # If BASENAME-pkg.el exists, use that
+# if we weren't given a PACKAGE_FILE, try to detect one
+ifndef PACKAGE_FILE
+# If BASENAME-pkg.el exists, use that
+ifneq (,$(wildcard $(PACKAGE_BASENAME)-pkg.el))
 PACKAGE_FILE := $(PACKAGE_BASENAME)-pkg.el
 $(info Using PACKAGE_FILE=$(PACKAGE_FILE))
-else				# otherwise,
+# otherwise,
+else
 $(info ./$(PACKAGE_BASENAME)-pkg.el does not exist)
-ifneq (,$(wildcard $(PACKAGE_BASENAME).el)) # look for BASENAME.el
-PACKAGE_FILE := $(PACKAGE_BASENAME).el	    # if that exists, use it
+# look for BASENAME.el
+ifneq (,$(wildcard $(PACKAGE_BASENAME).el))
+# if that exists, use it
+PACKAGE_FILE := $(PACKAGE_BASENAME).el
 $(info Using PACKAGE_FILE=$(PACKAGE_FILE))
 else
-$(info ./$(PACKAGE_BASENAME).el does not exist) # otherwise we're out of ideas
-endif				# BASENAME.el exists?
-endif				# BASENAME-pkg.el exists?
-endif				# PACKAGE_FILE defined?
+# otherwise we're out of ideas
+$(info ./$(PACKAGE_BASENAME).el does not exist)
+# BASENAME.el exists?
+endif
+# BASENAME-pkg.el exists?
+endif
+# PACKAGE_FILE defined?
+endif
 
 ifeq (,$(wildcard $(PACKAGE_FILE))) # if PACKAGE_FILE doesn't exist, error out
 ifeq (,$(PACKAGE_FILE))		    # if PACKAGE_FILE is null, we tried to detect it above
