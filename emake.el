@@ -169,7 +169,8 @@ great-grand-parent (=3) or... of DIR."
   "Return a list made from the environment variable ENV.
 ENV is expected to be a space-separated string."
   (when-let ((vals (emake--getenv env)))
-    (split-string vals nil 'omit-nulls)))
+    (cl-delete-duplicates
+     (split-string vals nil 'omit-nulls))))
 
 (defvar emake--debug-flags (emake--clean-list "EMAKE_DEBUG_FLAGS")
   "Flags to control non-functional behavior of EMake.
