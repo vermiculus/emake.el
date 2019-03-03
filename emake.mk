@@ -17,7 +17,6 @@
 # Minimum configuration
 #   PACKAGE_BASENAME: the basename that prefixes all Lisp files in this package
 #   EMAKE_SHA1:       the version of emake you want to use
-#   EMACS_VERSION:    the version of emacs you're using for testing
 
 ifndef PACKAGE_BASENAME
 $(error PACKAGE_BASENAME is not set)
@@ -25,10 +24,6 @@ endif
 
 ifndef EMAKE_SHA1
 $(error EMAKE_SHA1 is not set)
-endif
-
-ifndef EMACS_VERSION
-$(error EMACS_VERSION is not set)
 endif
 
 EMAKE_WORKDIR ?= .emake

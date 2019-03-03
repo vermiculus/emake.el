@@ -171,23 +171,25 @@ debug:
 Compares the MAJOR.MINOR versions of variable `emacs-version' to
 the EMACS_VERSION environment variable."
   (declare (emake-environment-variables "EMACS_VERSION"))
-  (let ((envver (emake--getenv "EMACS_VERSION")))
-    (if (string= envver "snapshot")
-        (prog1 t (emake-message-info
-                  (concat "Apparently running from snapshot; cannot verify "
-                          "(EMACS_VERSION=%S; emacs-version=%S)")
-                  envver emacs-version))
-      (emake-task (debug "Verifying Emacs version")
-        (let* ((major-minor (and (string-match (rx (+ digit) ?. (+ digit))
-                                               emacs-version)
-                                 (match-string 0 emacs-version)))
-               (match (version= major-minor (string-trim envver))))
-          (if match
-              (emake-message-debug "Emacs version %S verified" envver)
-            (emake-message-info "Emacs version %S expected; but this `emacs-version' is %S"
-                                envver
-                                emacs-version))
-          match)))))
+  (if-let ((envver (emake--getenv "EMACS_VERSION")))
+      (if (string= envver "snapshot")
+          (prog1 t (emake-message-info
+                    (concat "Apparently running from snapshot; cannot verify "
+                            "(EMACS_VERSION=%S; emacs-version=%S)")
+                    envver emacs-version))
+        (emake-task (debug "Verifying Emacs version")
+          (let* ((major-minor (and (string-match (rx (+ digit) ?. (+ digit))
+                                                 emacs-version)
+                                   (match-string 0 emacs-version)))
+                 (match (version= major-minor (string-trim envver))))
+            (if match
+                (emake-message-debug "Emacs version %S verified" envver)
+              (emake-message-info "Emacs version %S expected; but this `emacs-version' is %S"
+                                  envver
+                                  emacs-version))
+            match)))
+    (emake-message-info "EMACS_VERSION not set, cannot verify; running %S" emacs-version)
+    t))
 
 (defun emake--message-internal (format &rest args)
   "Print a message to standard out.
