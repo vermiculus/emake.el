@@ -9,7 +9,7 @@ include emake.mk
 
 # redeclare how to create emake.el
 $(EMAKE_WORKDIR)/emake.el:
-	cp emake.el $(EMAKE_WORKDIR)/emake.el
+	ln -s ../emake.el $(EMAKE_WORKDIR)/emake.el
 
 test: lint-checkdoc lint-package-lint ## run various linting tools
 
