@@ -743,14 +743,15 @@ TEST-RUNNER."
 
   (emake-with-elpa
    ;; Load any test definitions
-   (when-let ((test-files (emake--clean-list "PACKAGE_TESTS")))
-     (add-to-list 'load-path emake-project-root)
-     (dolist (test-file test-files)
-       (emake-task (debug (format "Loading test definitions in %s" test-file))
-         (unless (file-readable-p test-file)
-           (error "Cannot read file: %S" test-file))
-         ;; load the file with tests
-         (load test-file))))
+   (unless (function-get test-runner 'emake-lintp)
+     (when-let ((test-files (emake--clean-list "PACKAGE_TESTS")))
+       (add-to-list 'load-path emake-project-root)
+       (dolist (test-file test-files)
+         (emake-task (debug (format "Loading test definitions in %s" test-file))
+           (unless (file-readable-p test-file)
+             (error "Cannot read file: %S" test-file))
+           ;; load the file with tests
+           (load test-file)))))
 
    ;; run the tests and exit with an appropriate status
    (emake-task (debug (format "Running test `%S'" test-runner))
