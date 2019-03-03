@@ -436,12 +436,17 @@ is the executable body of the macro."
 
 (defmacro emake-with-elpa (&rest body)
   "Run BODY after setting up ELPA context."
-  (declare (debug t))
+  (declare (debug t)
+           (emake-environment-variables
+            ("PACKAGE_ARCHIVES" . "archives to use to install dependencies")))
   (emake--genform-with-elpa "elpa" "PACKAGE_ARCHIVES" body))
 
 (defmacro emake-with-elpa-test (&rest body)
   "Run BODY after setting up ELPA context."
-  (declare (debug t))
+  (declare (debug t)
+           (emake-environment-variables
+            ("PACKAGE_TEST_ARCHIVES" . "archives to use to install test suite dependencies")
+            ("PACKAGE_ARCHIVES" . "used if PACKAGE_TEST_ARCHIVES is unset")))
   `(progn
      (unless (emake--getenv "PACKAGE_TEST_ARCHIVES")
        (setcdr (assoc-string "PACKAGE_TEST_ARCHIVES" emake--env-cache)
