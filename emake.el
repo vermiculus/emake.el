@@ -181,6 +181,10 @@ show-environment:
 debug:
   set `debug-on-error' when running targets.")
 
+(when (member "debug" emake--debug-flags)
+  (setq debug-on-error t)
+  (setq debugger-batch-max-lines 5000))
+
 (defun emake-verify-version ()
   "Determines if the correct version of Emacs is being used.
 Compares the MAJOR.MINOR versions of variable `emacs-version' to
@@ -532,10 +536,7 @@ directory to be added to `load-path'."
   "Search for a function matching TARGET and execute it.
 
 The executed function is emake-my-TARGET if bound, else emake-TARGET."
-  (let ((fun (emake--resolve-target target))
-        (debug-on-error
-         ;; this variable must eq t
-         (and (member "debug" emake--debug-flags) t)))
+  (let ((fun (emake--resolve-target target)))
     (cl-assert (emake-verify-version))
     (emake-task (debug (format (if command-line-args-left
                                    "Running target %S with function `%S' with arguments %S"
