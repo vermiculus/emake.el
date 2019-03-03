@@ -92,12 +92,26 @@ See also `emake--resolve-target'."
   (function-put fn 'emake-test test-name)
   nil)
 
+(defun emake--declaration-default-lint (fn _fn-args lint-name)
+  "Note that FN is the default handler for LINT-NAME."
+  (emake--declaration-default-test fn nil lint-name)
+  (function-put fn 'emake-lintp t)
+  nil)
+
+(defun emake--declaration-lint (fn _fn-args lint-name)
+  "Note that FN is a handler for LINT-NAME."
+  (emake--declaration-test fn nil lint-name)
+  (function-put fn 'emake-lintp t)
+  nil)
+
 ;; activate (declare ...) properties
 (nconc defun-declarations-alist
        '((emake-environment-variables emake--declaration-environment-variables)
          (emake-default-target emake--declaration-default-target)
          (emake-target emake--declaration-target)
          (emake-help emake--declaration-help)
+         (emake-default-lint emake--declaration-default-lint)
+         (emake-lint emake--declaration-lint)
          (emake-default-test emake--declaration-default-test)
          (emake-test emake--declaration-test)))
 
@@ -814,7 +828,7 @@ line."
 (declare-function package-lint-batch-and-exit "ext:package-lint.el")
 (defun emake--test-helper-package-lint ()
   "Helper function for `package-lint' test backend."
-  (declare (emake-default-test "package-lint")
+  (declare (emake-default-lint "package-lint")
            (emake-environment-variables ("PACKAGE_FILE" . "this is the only file that will be linted; see purcell/package-lint#111")))
   (require 'package-lint)
   (emake--with-args-from-env "PACKAGE_FILE" #'package-lint-batch-and-exit))
@@ -822,7 +836,7 @@ line."
 (declare-function elsa-run "ext:elsa.el")
 (defun emake--test-helper-elsa ()
   "Helper function for `elsa' test backend."
-  (declare (emake-default-test "elsa")
+  (declare (emake-default-lint "elsa")
            (emake-environment-variables ("PACKAGE_LISP" . "these files will be analyzed")))
   (require 'elsa)
   (emake--with-args-from-env "PACKAGE_LISP"
