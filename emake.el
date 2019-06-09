@@ -58,6 +58,7 @@
 (require 'package)
 (require 'subr-x)
 (require 'cl-lib)
+(require 'debug)
 
 (defun emake--declaration-environment-variables (fn _fn-args &rest environment-variables)
   "Note that FN (i.e., a target) depends on ENVIRONMENT-VARIABLES.
