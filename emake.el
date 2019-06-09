@@ -1,4 +1,4 @@
-;;; emake.el --- simple automated Elisp testing  -*- lexical-binding: t; -*-
+;;; emake.el --- Simple automated Elisp testing  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2018-2019  Sean Allred
 
