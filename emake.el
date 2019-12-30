@@ -105,7 +105,8 @@ See also `emake--resolve-target'."
   (function-put fn 'emake-lintp t)
   nil)
 
-;; activate (declare ...) properties
+;; activate (declare ...) properties by shoving them onto
+;; `defun-declarations-alist'
 (nconc defun-declarations-alist
        '((emake-environment-variables emake--declaration-environment-variables)
          (emake-default-target emake--declaration-default-target)
@@ -218,6 +219,7 @@ list of arguments for that format string."
   (let ((s (apply #'format format args)))
     (princ (concat (if noninteractive "\033[0;37memake:\033[0m" "emake:") s "\n"))
     s))
+
 (defun emake-message (format &rest args)
   "Print a message to standard out.
 Argument FORMAT is a format string.  Optional argument ARGS is a
