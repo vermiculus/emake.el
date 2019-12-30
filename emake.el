@@ -410,10 +410,10 @@ dependency are added so that all dependencies are still met."
 ;;; Installing dependencies
 
 (defvar emake-package-archive-master-alist
-  '(("gnu"          . "http://elpa.gnu.org/packages/")
-    ("melpa"        . "http://melpa.org/packages/")
-    ("melpa-stable" . "http://stable.melpa.org/packages/")
-    ("org"          . "http://orgmode.org/elpa/"))
+  '(("gnu"          . "https://elpa.gnu.org/packages/")
+    ("melpa"        . "https://melpa.org/packages/")
+    ("melpa-stable" . "https://stable.melpa.org/packages/")
+    ("org"          . "https://orgmode.org/elpa/"))
   "Archive definition alist.
 Key is the string name of the archive.
 Value is the URL at which the archive is hosted.")
